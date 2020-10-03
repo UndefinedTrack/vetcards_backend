@@ -14,6 +14,8 @@ from .forms import UserForm, UpdateUserForm
 @require_POST
 def create_user(request):
     
+    '''Создание пользователя'''
+    
     User = apps.get_model('users.User')
     form = UserForm(request.POST)
     
@@ -38,6 +40,8 @@ def create_user(request):
 @csrf_exempt
 @require_POST
 def update_user_info(request):
+
+    '''Обновление информации о пользователе'''
     
     User = apps.get_model('users.User')
     form = UpdateUserForm(request.POST)
@@ -50,10 +54,12 @@ def update_user_info(request):
             return JsonResponse({"errors": "User not found"})
         
         for k in form.cleaned_data.keys():
+            print(k)
             if k != 'id' and form.cleaned_data[k] != '':
-                user[k] = form.cleaned_data[k]
+                print(user.__dict__[k])
+                user.__dict__[k] = form.cleaned_data[k]
                 
-        user.save()
+        user.save(force_update=True)
 
         usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
                'patronymic': user.patronymic, 'last_name': user.last_name,
@@ -66,10 +72,12 @@ def update_user_info(request):
     
 @require_GET
 def get_user_info(request):
+
+    '''Получение информации о пользователе'''
     
     User = apps.get_model('users.User')
     
     user = User.objects.filter(id=int(request.GET['uid'])).values('id', 'username', 'first_name', 'patronymic', 
                                                    'last_name', 'phone', 'email')
     
-    return JsonResponse({"user": user})
+    return JsonResponse({"user": list(user)[0]})

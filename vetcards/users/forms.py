@@ -5,10 +5,10 @@ class UserForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['username', 'first_name', 'patronymic',
-                   'last_name', 'phone', 'vet', 'avatar']
+                   'last_name', 'phone', 'email']
         
 class UpdateUserForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['id', 'first_name', 'patronymic',
-                   'last_name', 'phone', 'avatar']
+                   'last_name', 'phone', 'email']
