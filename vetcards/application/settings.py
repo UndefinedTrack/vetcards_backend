@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -22,10 +22,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'bkz^2(#8innhhxuf1ux8^wvg^!*pnliyv+(y!cq%$$nf=vd@eb'
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # heroku fix
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['vetcards.herokuapp.com', 'undefinedtrack.github.io/vetcards_frontend/#/', 'localhost:8000']
 
 
 # Application definition
@@ -40,6 +42,7 @@ INSTALLED_APPS = [
     'cards',
     'users',
     'pets',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
@@ -79,7 +82,8 @@ WSGI_APPLICATION = 'application.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'), # heroku fix
+        # 'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -104,6 +108,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTH_USER_MODEL = "users.User"
 
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ORIGIN_WHITELIST = ['https://undefinedtrack.github.io/vetcards_frontend/', 'https://undefinedtrack.github.io/vetcards_frontend/#/', 'https://vetcards.herokuapp.com', 'http://localhost:8000']
+CSRF_TRUSTED_ORIGINS = ['https://undefinedtrack.github.io/vetcards_frontend/', 'https://undefinedtrack.github.io/vetcards_frontend/#/', 'https://vetcards.herokuapp.com', 'http://localhost:8000']
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
@@ -123,3 +132,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILE_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
