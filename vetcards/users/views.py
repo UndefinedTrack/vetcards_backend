@@ -2,13 +2,18 @@ from django.shortcuts import render
 from django.apps import apps
 
 from django.http import JsonResponse
-
+from django.middleware.csrf import get_token
+from django.contrib.auth.hashers import make_password
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 from .forms import UserForm, UpdateUserForm
 
 # Create your views here.
+
+@require_GET
+def csrf(request):
+    return JsonResponse({'csrfToken': get_token(request)})
 
 @csrf_exempt
 @require_POST
@@ -22,6 +27,7 @@ def create_user(request):
     if form.is_valid():
         
         user = User.objects.create(username=form.cleaned_data['username'],
+                                   password=make_password(form.cleaned_data['password']),
                                    first_name=form.cleaned_data['first_name'],
                                    patronymic=form.cleaned_data['patronymic'],
                                    last_name=form.cleaned_data['last_name'],

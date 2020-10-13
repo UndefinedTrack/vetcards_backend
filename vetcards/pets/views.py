@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
-from .forms import PetForm
+from .forms import PetForm, PetUpdateForm
 
 # Create your views here.
 
@@ -23,15 +23,16 @@ def create_pet(request):
     if form.is_valid():
         pet = Pet.objects.create(user_id=form.cleaned_data['user'].id, 
                                  name=form.cleaned_data['name'], 
-                                 species=form.cleaned_data['species'], 
+                                 species=form.cleaned_data['species'],
+                                 breed=form.cleaned_data['breed'],  
                                  color=form.cleaned_data['color'],
                                  birth_date=form.cleaned_data['birth_date'],
                                  gender=form.cleaned_data['gender'],
                                  chip=form.cleaned_data['chip'])
         
         pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
-              'species': pet.species, 'color': pet.color, 'birth_date': pet.birth_date, 
-              'gender': pet.gender, 'chip': pet.chip}
+              'species': pet.species, 'breed': pet.breed, 'color': pet.color,
+              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip}
         
         return JsonResponse({"pet": pt})
         
@@ -44,25 +45,30 @@ def update_pet_info(request):
     '''Обновление информации о питомце'''
     
     Pet = apps.get_model('pets.Pet')
+    User = apps.get_model('users.User')
     
-    form = PetForm(request.POST)
+    form = PetUpdateForm(request.POST)
     
     if form.is_valid():
         
-        pet = Pet.objects.filter(user_id=form.cleaned_data['user'], name=form.cleaned_data['name']).first()
+        pet = Pet.objects.filter(id=form.cleaned_data['id']).first()
+        user = User.objects.filter(id=form.cleaned_data['id']).first()
         
         if pet == None:
             return JsonResponse({"errors": "Pet not found"})
+
+        if pet.user.id != form.cleaned_data['id'] and not user.vet:
+            return JsonResponse({"error": "You aren't veterinar or owner of the pet"})
         
         for k in form.cleaned_data.keys():
-            if k != 'user' and form.cleaned_data[k] != '':
+            if k != 'user' and k != 'id' and form.cleaned_data[k] != '':
                 pet.__dict__[k] = form.cleaned_data[k]
                 
         pet.save()
 
         pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
-              'species': pet.species, 'color': pet.color, 'birth_date': pet.birth_date, 
-              'gender': pet.gender, 'chip': pet.chip}
+              'species': pet.species, 'breed': pet.breed, 'color': pet.color, 
+              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip}
         
         return JsonResponse({"pet": pt})
             
@@ -97,10 +103,36 @@ def pets_list(request):
     Pet = apps.get_model('pets.Pet')
     
     pets = Pet.objects.filter(user_id=int(request.GET['uid'])).values('id', 'user_id', 'name', 
-                                                       'species', 'color', 'birth_date',
+                                                       'species', 'breed', 'color', 'birth_date',
                                                        'gender', 'chip')
     
     return JsonResponse({'pets': list(pets)})
+
+@require_GET
+def patients_list(request):
+
+    '''Выдает список пациентов'''
+
+    Pet = apps.get_model('pets.Pet')
+    User = apps.get_model('users.User')
+
+    uid = int(request.GET['uid'])
+
+    user = User.objects.filter(id=uid).first()
+
+    if not user.vet:
+        return JsonResponse({"error": "You aren't veterinar"})
+
+    pets = Pet.objects.all()
+
+    patients = []
+
+    for pet in pets:
+        patr = pet.user.patronymic[0] if pet.user.patronymic != '' else ''
+        pat = {'patient': f'{pet.name}, {pet.species}', 'owner': f'{pet.user.last_name} {pet.user.first_name[0]}.{patr}.', 'card': pet.id}
+        patients.append(pat)
+
+    return JsonResponse({'patients': list(patients)})
 
 @require_GET
 def pet_info(request):
@@ -119,7 +151,7 @@ def pet_info(request):
     if pet.user.id != uid and not user.vet:
         return JsonResponse({"error": "You aren't veterinar or owner of the pet"})
     
-    pt = {'id': pet.id, 'name': pet.name, 'species': pet.species, 'color': pet.color,
+    pt = {'id': pet.id, 'name': pet.name, 'species': pet.species, 'breed': pet.breed, 'color': pet.color,
           'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip}
     
     return JsonResponse({'pet': pt})
