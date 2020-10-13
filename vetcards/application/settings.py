@@ -27,7 +27,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # heroku fix
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['vetcards.herokuapp.com', 'undefinedtrack.github.io/vetcards_frontend/#/', 'localhost:8000']
+ALLOWED_HOSTS = ['vetcards.herokuapp.com', 'undefinedtrack.github.io/vetcards_frontend/#/', 'localhost:8000', 'localhost']
 
 
 # Application definition
