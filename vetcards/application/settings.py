@@ -111,8 +111,9 @@ AUTH_USER_MODEL = "users.User"
 
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ORIGIN_WHITELIST = ['https://undefinedtrack.github.io', 'https://vetcards.herokuapp.com', 'http://localhost:8000']
-CSRF_TRUSTED_ORIGINS = ['https://undefinedtrack.github.io/vetcards_frontend/', 'https://undefinedtrack.github.io/vetcards_frontend/#/', 'https://vetcards.herokuapp.com', 'http://localhost:8000']
+CORS_ORIGIN_WHITELIST = ['https://undefinedtrack.github.io', 'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000']
+CSRF_TRUSTED_ORIGINS = ['https://undefinedtrack.github.io/vetcards_frontend/', 'https://undefinedtrack.github.io/vetcards_frontend/#/', 
+'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000']
 
 
 # Internationalization
