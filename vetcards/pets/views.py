@@ -129,7 +129,8 @@ def patients_list(request):
 
     for pet in pets:
         patr = pet.user.patronymic[0] if pet.user.patronymic != '' else ''
-        pat = {'patient': f'{pet.name}, {pet.species}', 'owner': f'{pet.user.last_name} {pet.user.first_name[0]}.{patr}.', 'card': pet.id}
+        name = pet.user.first_name[0] if pet.user.first_name != '' else ''
+        pat = {'patient': f'{pet.name}, {pet.species}', 'owner': f'{pet.user.last_name} {name}.{patr}.', 'card': pet.id}
         patients.append(pat)
 
     return JsonResponse({'patients': list(patients)})
