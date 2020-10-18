@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import os
 from pathlib import Path
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,10 +40,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'cards',
     'users',
     'pets',
-    'corsheaders'
+    'notifications'
 ]
 
 MIDDLEWARE = [
@@ -114,6 +116,20 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_WHITELIST = ['https://undefinedtrack.github.io', 'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000']
 CSRF_TRUSTED_ORIGINS = ['https://undefinedtrack.github.io/vetcards_frontend/', 'https://undefinedtrack.github.io/vetcards_frontend/#/', 
 'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000']
+
+CELERY_BROKER_URL = 'redis://localhost:6379'  
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'  
+CELERY_ACCEPT_CONTENT = ['application/json']  
+CELERY_RESULT_SERIALIZER = 'json'  
+CELERY_TASK_SERIALIZER = 'json' 
+CELERY_TIMEZONE = 'Europe/Moscow'
+CELERY_BEAT_SCHEDULE = {
+    'notif_sender': {
+        'task': 'users.tasks.users_counter',
+        'schedule': 30.0, # crontab(minute=59, hour=23),
+        'args': ()
+    },
+}
 
 
 # Internationalization

@@ -87,3 +87,15 @@ def get_user_info(request):
                                                    'last_name', 'phone', 'email')
     
     return JsonResponse({"user": list(user)[0]})
+
+@require_GET
+def vets_list(request):
+
+    '''Выдает список ветеринаров'''
+
+    User = apps.get_model('users.User')
+    
+    vets = User.objects.filter(vet=True).values('id', 'first_name', 'patronymic', 
+                                                   'last_name')
+
+    return JsonResponse({"vets": list(vets)})
