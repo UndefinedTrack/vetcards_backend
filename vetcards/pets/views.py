@@ -52,12 +52,12 @@ def update_pet_info(request):
     if form.is_valid():
         
         pet = Pet.objects.filter(id=form.cleaned_data['id']).first()
-        user = User.objects.filter(id=form.cleaned_data['id']).first()
+        user = User.objects.filter(id=form.cleaned_data['user']).first()
         
         if pet == None:
             return JsonResponse({"errors": "Pet not found"})
 
-        if pet.user.id != form.cleaned_data['id'] and not user.vet:
+        if pet.user.id != form.cleaned_data['user'].id and not user.vet:
             return JsonResponse({"error": "You aren't veterinar or owner of the pet"})
         
         for k in form.cleaned_data.keys():
@@ -130,7 +130,16 @@ def patients_list(request):
     for pet in pets:
         patr = pet.user.patronymic[0] if pet.user.patronymic != '' else ''
         name = pet.user.first_name[0] if pet.user.first_name != '' else ''
-        pat = {'patient': f'{pet.name}, {pet.species}', 'owner': f'{pet.user.last_name} {name}.{patr}.', 'card': pet.id}
+
+        owner = f'{pet.user.last_name} {name}.{patr}.'
+
+        if patr == '':
+            owner = f'{pet.user.last_name} {name}.'
+
+        if name == '':
+            owner = f'{pet.user.last_name}'
+        
+        pat = {'patient': f'{pet.name}, {pet.species}', 'owner': owner, 'card': pet.id}
         patients.append(pat)
 
     return JsonResponse({'patients': list(patients)})

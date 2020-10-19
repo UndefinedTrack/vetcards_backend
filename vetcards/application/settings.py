@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'cards',
     'users',
     'pets',
-    'notifications'
+    'notifications',
+    'schedule'
 ]
 
 MIDDLEWARE = [
