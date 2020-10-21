@@ -8,7 +8,7 @@ class Pet(models.Model):
     species = models.TextField(max_length=128, null=True, verbose_name='Вид')
     breed = models.TextField(max_length=128, null=True, blank=True, verbose_name='Порода')
     color = models.TextField(max_length=128, null=True, blank=True, verbose_name='Окрас')
-    birth_date = models.DateField(null=True, blank=True, verbose_name='Дата рождения')
+    birth_date = models.TextField(max_length=10, null=True, blank=True, verbose_name='Дата рождения')
     gender = models.TextField(max_length=10, null=True, blank=True, verbose_name='Пол')
     chip = models.TextField(max_length=64, null=True, blank=True, verbose_name='Чип')
     avatar = models.ImageField(upload_to='pavatars/', null=True, blank=True, verbose_name='Фотография')
