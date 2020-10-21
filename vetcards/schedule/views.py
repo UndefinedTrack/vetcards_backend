@@ -144,12 +144,10 @@ def vet_day_slots_list(request):
 
     User = apps.get_model('users.User')
     Slot = apps.get_model('schedule.Slot')
-
-    uid = int(request.GET['uid'])
+    
     vid = int(request.GET['vid'])
     slot_dt = request.GET['dt']
 
-    user = User.objects.filter(id=uid).first()
     vet = User.objects.filter(id=vid).first()
 
     if not vet.vet:
@@ -174,12 +172,10 @@ def vet_int_slots_list(request):
     User = apps.get_model('users.User')
     Slot = apps.get_model('schedule.Slot')
 
-    uid = int(request.GET['uid'])
     vid = int(request.GET['vid'])
     slot_st_dt = request.GET['st_dt']
     slot_end_dt = request.GET['end_dt']
 
-    user = User.objects.filter(id=uid).first()
     vet = User.objects.filter(id=vid).first()
 
     if not vet.vet:
