@@ -191,7 +191,7 @@ def upload_pet_avatar(request):
         
         pet_avatar = {'id': pet.id, 
                       'user': pet.user.id,
-                      'avatar': pet.avatar.url.replace('http://hb.bizmrg.com/undefined_track/',  '/pets/avatars/')}
+                      'avatar': pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/')}
         
         return JsonResponse({'pet_avatar': pet_avatar})
     

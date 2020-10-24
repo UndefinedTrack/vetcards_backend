@@ -119,7 +119,7 @@ def upload_user_avatar(request):
         user.save()
         
         user_avatar = {'id': user.id,
-                      'avatar': user.avatar.url.replace('http://hb.bizmrg.com/undefined_track/',  '/users/avatars/')}
+                      'avatar': user.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/users/avatars/')}
         
         return JsonResponse({'user_avatar': user_avatar})
     
