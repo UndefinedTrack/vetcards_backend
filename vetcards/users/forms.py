@@ -8,7 +8,14 @@ class UserForm(forms.ModelForm):
                    'last_name', 'phone', 'email']
         
 class UpdateUserForm(forms.ModelForm):
+    
+    pk = forms.IntegerField()
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'patronymic',
+        fields = ['first_name', 'patronymic',
                    'last_name', 'phone', 'email']
+        
+class UserAvatarForm(forms.Form):
+    
+    pk = forms.IntegerField()
+    avatar = forms.ImageField()

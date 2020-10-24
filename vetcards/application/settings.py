@@ -140,9 +140,9 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 AWS_S3_ENDPOINT_URL = 'http://hb.bizmrg.com'
-AWS_ACCESS_KEY_ID = '9vwEevpnYWkRSmubTghzGs'
-AWS_SECRET_ACCESS_KEY = 'a71bvbfKLCgehuoQW8f6HEzk1pWN4Tk9g8DSPAyaYARt'
-AWS_STORAGE_BUCKET_NAME = 'undefined.track'
+AWS_ACCESS_KEY_ID = 'rnqvvAGFXbpcAZL6ozbuZA'
+AWS_SECRET_ACCESS_KEY = 'gVjbdTqPecMq4kZdfxWx4rf6fiSXwrMBMa53Ffw5L3tB'
+AWS_STORAGE_BUCKET_NAME = 'undefined'
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 # Internationalization

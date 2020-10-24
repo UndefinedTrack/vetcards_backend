@@ -9,7 +9,16 @@ class PetForm(forms.ModelForm):
 
 
 class PetUpdateForm(forms.ModelForm):
+    
+    pk = forms.IntegerField()
     class Meta:
         model = Pet
-        fields = ['id', 'user', 'name', 'species', 'breed', 'color', 'birth_date',
+        fields = ['user', 'name', 'species', 'breed', 'color', 'birth_date',
                    'gender', 'chip']
+        
+
+class PetAvatarForm(forms.Form):
+    
+    pk = forms.IntegerField()
+    user = forms.IntegerField()
+    avatar = forms.ImageField()
