@@ -8,7 +8,7 @@ class Procedure(models.Model):
     purpose = models.TextField(max_length=128, null=True, verbose_name='Цель')
     symptoms = models.TextField(max_length=256, null=True, blank=True, verbose_name='Симптомы')
     diagnosis = models.TextField(max_length=256, null=True, blank=True, verbose_name='Диагноз')
-    recomms= models.TextField(max_length=256, null=True, blank=True, verbose_name='Рекомендации')
+    recomms = models.TextField(max_length=256, null=True, blank=True, verbose_name='Рекомендации')
     recipe = models.TextField(max_length=256, null=True, blank=True, verbose_name='Рецепт')
     proc_date = models.DateField(null=True, auto_now_add=True, verbose_name='Дата')
     

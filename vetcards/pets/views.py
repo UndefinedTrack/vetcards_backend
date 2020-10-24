@@ -1,12 +1,12 @@
 from django.shortcuts import render
 from django.apps import apps
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
-from .forms import PetForm, PetUpdateForm
+from .forms import PetForm, PetUpdateForm, PetAvatarForm
 
 # Create your views here.
 
@@ -51,8 +51,8 @@ def update_pet_info(request):
     
     if form.is_valid():
         
-        pet = Pet.objects.filter(id=form.cleaned_data['id']).first()
-        user = User.objects.filter(id=form.cleaned_data['user']).first()
+        pet = Pet.objects.filter(id=form.cleaned_data['pk']).first()
+        user = User.objects.filter(id=form.cleaned_data['user'].id).first()
         
         if pet == None:
             return JsonResponse({"errors": "Pet not found"})
@@ -61,7 +61,7 @@ def update_pet_info(request):
             return JsonResponse({"error": "You aren't veterinar or owner of the pet"})
         
         for k in form.cleaned_data.keys():
-            if k != 'user' and k != 'id' and form.cleaned_data[k] != '':
+            if k != 'user' and k != 'pk' and form.cleaned_data[k] != '':
                 pet.__dict__[k] = form.cleaned_data[k]
                 
         pet.save()
@@ -165,3 +165,53 @@ def pet_info(request):
           'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip}
     
     return JsonResponse({'pet': pt})
+
+
+@csrf_exempt
+@require_POST
+def upload_pet_avatar(request):
+    
+    Pet = apps.get_model('pets.Pet')
+    User = apps.get_model('users.User')
+    
+    form = PetAvatarForm(request.POST, request.FILES)
+    
+    if form.is_valid():
+        
+        pet = Pet.objects.filter(id=form.cleaned_data['pk']).first()
+        
+        if pet == None:
+            return JsonResponse({"error": "Pet not found"})
+        
+        if pet.user.id != form.cleaned_data['user']:
+            return JsonResponse({"error": "You aren't owner of the pet"})
+        
+        pet.avatar = form.cleaned_data['avatar']
+        pet.save()
+        
+        pet_avatar = {'id': pet.id, 
+                      'user': pet.user.id,
+                      'avatar': pet.avatar.url.replace('http://hb.bizmrg.com/undefined_track/',  '/pets/avatars/')}
+        
+        return JsonResponse({'pet_avatar': pet_avatar})
+    
+    
+    return JsonResponse({'errors': form.errors}, status=400)
+
+
+@csrf_exempt
+@require_GET
+def protected_file(request):
+    if request.user.is_authenticated:
+        url = request.path.replace('/pets/avatars', '/protected')
+        print(url)
+        response = HttpResponse(status=200)
+        response['X-Accel-Redirect'] = url
+        print(response.has_header('X-Accel-Redirect'))
+        
+        if 'Expires' in request.GET.keys():
+            response['X-Accel-Expires'] = request.GET['Expires']
+        response['Content-type'] = ''
+        return response
+    else:
+        return HttpResponse('<h1>File not found</h1>', status=404)

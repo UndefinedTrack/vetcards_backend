@@ -97,7 +97,7 @@ def vet_procs_list(request):
     if pet.user.id != uid and not user.vet:
         return JsonResponse({"errors": "you aren't a veterinar or owner of this pet"})
     
-    procedures = Procedure.objects.filter(pet_id=int(pid)).values('pet_id', 'user_id', 'purpose', 'symptoms',
+    procedures = Procedure.objects.filter(pet_id=int(pid)).values('id', 'pet_id', 'user_id', 'purpose', 'symptoms',
                                                                   'diagnosis', 'recomms', 'recipe', 'proc_date')
     
     return JsonResponse({'procedures': list(procedures)})
