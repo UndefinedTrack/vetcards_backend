@@ -5,7 +5,7 @@ from .models import Pet
 @registry.register_document
 class PetDocument(Document):
 
-    user_id = fields.IntegerField(attr='user')
+    user_id = fields.IntegerField(attr='user.id')
     class Index:
 
         name = 'pets'
