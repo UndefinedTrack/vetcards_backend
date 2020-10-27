@@ -4,9 +4,9 @@ from .models import Pet
 
 @registry.register_document
 class PetDocument(Document):
-    class Index:
 
-        user_id = fields.IntegerField(attr='user')
+    user_id = fields.IntegerField(attr='user')
+    class Index:
 
         name = 'pets'
         settings = {'number_of_shards': 1, 'number_of_replicas': 1}
