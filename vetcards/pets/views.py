@@ -140,7 +140,7 @@ def patients_list(request):
         if name == '':
             owner = f'{pet.user.last_name}'
         
-        pat = {'patient': f'{pet.name}, {pet.species}', 'color': pet.color, 'bitrh_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id}
+        pat = {'patient': f'{pet.name}, {pet.species}', 'color': pet.color, 'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id}
         patients.append(pat)
 
     return JsonResponse({'patients': list(patients)})
