@@ -238,9 +238,7 @@ def search(request):
     
     for pet in pets:
 
-        print(pet)
-
-        usr = User.objects.filter(id=pet.user_id).first()
+        usr = User.objects.filter(id=pet['user_id']).first()
         patr = usr.patronymic[0] if usr.patronymic != '' else ''
         name = usr.first_name[0] if usr.first_name != '' else ''
 
