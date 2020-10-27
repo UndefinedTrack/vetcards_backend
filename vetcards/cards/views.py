@@ -7,6 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 from .forms import ProcedureForm, OwnerProcedureForm
+from .documents import OwnerProcedureDocument, VetProcedureDocument
 
 # Create your views here.
 
@@ -114,13 +115,49 @@ def owner_procs_list(request):
     uid = int(request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
-
-    print(pet.user.id)
-    print(uid)
     
     if pet.user.id != uid:
         return JsonResponse({"errors": "you aren't owner of this pet"})
     
     procedures = OwnerProcedure.objects.filter(pet_id=int(pid)).values('id', 'pet_id', 'user_id', 'name', 'description', 'proc_date')
+    
+    return JsonResponse({'procedures': list(procedures)})
+
+
+@require_GET
+def search_owner_procs(request):
+    Pet = apps.get_model('pets.Pet')
+    
+    pid = int(request.GET['pid'])
+    uid = int(request.GET['uid'])
+    
+    pet = Pet.objects.filter(id=int(pid)).first()
+    
+    if pet.user.id != uid:
+        return JsonResponse({"errors": "you aren't owner of this pet"})
+    
+    owner_procs = OwnerProcedureDocument.search().query('wildcard', name='*' + str(request.GET['name']) + '*', pet_id=pid)[:10]
+    procedures = owner_procs.to_queryset().values('id', 'pet_id', 'user_id', 'name', 'description', 'proc_date')
+    
+    return JsonResponse({'procedures': procedures})
+
+@require_GET
+def search_vet_procs(request):
+    
+    Pet = apps.get_model('pets.Pet')
+    User = apps.get_model('users.User')
+
+    pid = int(request.GET['pid'])
+    uid = int(request.GET['uid'])
+    
+    pet = Pet.objects.filter(id=int(pid)).first()
+    user = User.objects.filter(id=int(uid)).first()
+    
+    if pet.user.id != uid and not user.vet:
+        return JsonResponse({"errors": "you aren't a veterinar or owner of this pet"})
+    
+    vet_procs = VetProcedureDocument.search().query('wildcard', name='*' + str(request.GET['name']) + '*', pet_id=pid)[:10]
+    procedures = vet_procs.to_queryset().values('id', 'pet_id', 'user_id', 'purpose', 'symptoms', 
+                                                  'diagnosis', 'recomms', 'recipe', 'proc_date')
     
     return JsonResponse({'procedures': list(procedures)})
