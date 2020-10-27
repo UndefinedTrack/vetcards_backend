@@ -230,7 +230,7 @@ def search(request):
     if not user.vet:
         return JsonResponse({"error": "You aren't veterinar"})
     
-    pets = PetDocument.search().query('wildcard', name='*' + str(request.GET['name']) + '*')[:10]
+    pets = PetDocument.search().query('wildcard', name='*' + str(request.GET['name']) + '*')
     pets = pets.to_queryset().values('id', 'user_id', 'name', 'species', 'breed', 
                   'color', 'birth_date', 'gender', 'chip')
     
