@@ -5,8 +5,8 @@ from .models import Procedure, OwnerProcedure
 @registry.register_document
 class OwnerProcedureDocument(Document):
 
-    pet_id = fields.IntegerField(attr='pet')
-    user_id = fields.IntegerField(attr='user')
+    pet_id = fields.IntegerField(attr='pet.id')
+    user_id = fields.IntegerField(attr='user.id')
     class Index:
         name = 'owner_procs'
         settings = {'number_of_shards': 1, 'number_of_replicas': 1}
@@ -18,8 +18,8 @@ class OwnerProcedureDocument(Document):
 @registry.register_document
 class VetProcedureDocument(Document):
 
-    pet_id = fields.IntegerField(attr='pet')
-    user_id = fields.IntegerField(attr='user')
+    pet_id = fields.IntegerField(attr='pet.id')
+    user_id = fields.IntegerField(attr='user.id')
     class Index:
         name = 'vet_procs'
         settings = {'number_of_shards': 1, 'number_of_replicas': 1}
