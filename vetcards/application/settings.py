@@ -45,7 +45,8 @@ INSTALLED_APPS = [
     'users',
     'pets',
     'notifications',
-    'schedule'
+    'schedule',
+    'django_elasticsearch_dsl',
 ]
 
 MIDDLEWARE = [
@@ -136,6 +137,12 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'notifications.tasks.notif_sender',
         'schedule': 30.0, # crontab(minute=59, hour=23),
         'args': ()
+    },
+}
+
+ELASTICSEARCH_DSL={
+    'default': {
+        'hosts': 'localhost:9200'
     },
 }
 

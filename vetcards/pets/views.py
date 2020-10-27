@@ -7,6 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 from .forms import PetForm, PetUpdateForm, PetAvatarForm
+from .documents import PetDocument
 
 # Create your views here.
 
@@ -215,3 +216,39 @@ def protected_file(request):
         return response
     else:
         return HttpResponse('<h1>File not found</h1>', status=404)
+
+@require_GET
+def search(request):
+    
+    Pet = apps.get_model('pets.Pet')
+    User = apps.get_model('users.User')
+
+    uid = int(request.GET['uid'])
+
+    user = User.objects.filter(id=uid).first()
+
+    if not user.vet:
+        return JsonResponse({"error": "You aren't veterinar"})
+    
+    pets = PetDocument.search().query('wildcard', name='*' + str(request.GET['name']) + '*')[:10]
+    pets = pets.to_queryset().values('id', 'user_id', 'name', 'species', 'breed', 
+                  'color', 'birth_date', 'gender', 'chip')
+    
+    patients = []
+    
+    for pet in pets:
+        patr = pet.user.patronymic[0] if pet.user.patronymic != '' else ''
+        name = pet.user.first_name[0] if pet.user.first_name != '' else ''
+
+        owner = f'{pet.user.last_name} {name}.{patr}.'
+
+        if patr == '':
+            owner = f'{pet.user.last_name} {name}.'
+
+        if name == '':
+            owner = f'{pet.user.last_name}'
+        
+        pat = {'patient': f'{pet.name}, {pet.species}', 'color': pet.color, 'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id}
+        patients.append(pat)
+    
+    return JsonResponse({'patients': list(patients)})
