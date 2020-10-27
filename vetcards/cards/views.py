@@ -139,7 +139,7 @@ def search_owner_procs(request):
     owner_procs = OwnerProcedureDocument.search().filter("term", pet_id=pid).query('wildcard', name='*' + str(request.GET['name']) + '*')
     procedures = owner_procs.to_queryset().values('id', 'pet_id', 'user_id', 'name', 'description', 'proc_date')
     
-    return JsonResponse({'procedures': procedures})
+    return JsonResponse({'procedures': list(procedures)})
 
 @require_GET
 def search_vet_procs(request):
