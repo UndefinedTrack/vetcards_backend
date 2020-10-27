@@ -156,7 +156,7 @@ def search_vet_procs(request):
     if pet.user.id != uid and not user.vet:
         return JsonResponse({"errors": "you aren't a veterinar or owner of this pet"})
     
-    vet_procs = VetProcedureDocument.search().query('wildcard', name='*' + str(request.GET['name']) + '*', pet_id=pid)[:10]
+    vet_procs = VetProcedureDocument.search().query('wildcard', purpose='*' + str(request.GET['name']) + '*', pet_id=pid)[:10]
     procedures = vet_procs.to_queryset().values('id', 'pet_id', 'user_id', 'purpose', 'symptoms', 
                                                   'diagnosis', 'recomms', 'recipe', 'proc_date')
     
