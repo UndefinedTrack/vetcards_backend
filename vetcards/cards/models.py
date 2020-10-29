@@ -10,7 +10,7 @@ class Procedure(models.Model):
     diagnosis = models.TextField(max_length=256, null=True, blank=True, verbose_name='Диагноз')
     recomms = models.TextField(max_length=256, null=True, blank=True, verbose_name='Рекомендации')
     recipe = models.TextField(max_length=256, null=True, blank=True, verbose_name='Рецепт')
-    proc_date = models.DateField(null=True, auto_now_add=True, verbose_name='Дата')
+    proc_date = models.DateField(verbose_name='Дата')
     
     class Meta:
         verbose_name = "Процедура"
@@ -21,7 +21,7 @@ class OwnerProcedure(models.Model):
     user = models.ForeignKey(to='users.User', on_delete=models.CASCADE, verbose_name='Владелец')
     name = models.TextField(max_length=128, null=True, verbose_name='Цель')
     description = models.TextField(max_length=256, null=True, blank=True, verbose_name='Описание')
-    proc_date = models.DateField(null=True, auto_now_add=True, verbose_name='Дата')
+    proc_date = models.DateField(verbose_name='Дата')
     
     class Meta:
         verbose_name = "Домашняя процедура"

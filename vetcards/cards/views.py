@@ -35,7 +35,8 @@ def create_vet_procedure(request):
                                              symptoms=form.cleaned_data['symptoms'],
                                              diagnosis=form.cleaned_data['diagnosis'],
                                              recomms=form.cleaned_data['recomms'],
-                                             recipe=form.cleaned_data['recipe'])
+                                             recipe=form.cleaned_data['recipe'],
+                                             proc_date=form.cleaned_data['proc_date'])
         
         proc = {'id': procedure.id, 'pet_id': procedure.pet_id, 'user_id': procedure.user_id,
                 'purpose': procedure.purpose, 'symptoms': procedure.symptoms,
@@ -70,7 +71,8 @@ def create_owner_procedure(request):
         procedure = OwnerProcedure.objects.create(pet_id=form.cleaned_data['pet'].id,
                                                   user_id=form.cleaned_data['user'].id,
                                                   name=form.cleaned_data['name'],
-                                                  description=form.cleaned_data['description'])
+                                                  description=form.cleaned_data['description'],
+                                                  proc_date=form.cleaned_data['proc_date'])
         
         proc = {'id': procedure.id, 'pet_id': procedure.pet_id, 'user_id': procedure.user_id,
                 'name': procedure.name, 'description': procedure.description, 'proc_date': procedure.proc_date}
