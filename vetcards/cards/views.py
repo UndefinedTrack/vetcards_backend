@@ -138,7 +138,7 @@ def search_owner_procs(request):
     if pet.user.id != uid:
         return JsonResponse({"errors": "you aren't owner of this pet"})
     
-    owner_procs = OwnerProcedureDocument.search().filter("term", pet_id=pid).query('wildcard', name='*' + str(request.GET['name']) + '*')
+    owner_procs = OwnerProcedureDocument.search().filter("term", pet_id=pid).query('match', name=str(request.GET['name'])) # .query('wildcard', name='*' + str(request.GET['name']) + '*')
     procedures = owner_procs.to_queryset().values('id', 'pet_id', 'user_id', 'name', 'description', 'proc_date')
     
     return JsonResponse({'procedures': list(procedures)})
@@ -158,7 +158,7 @@ def search_vet_procs(request):
     if pet.user.id != uid and not user.vet:
         return JsonResponse({"errors": "you aren't a veterinar or owner of this pet"})
     
-    vet_procs = VetProcedureDocument.search().filter("term", pet_id=pid).query('wildcard', purpose='*' + str(request.GET['name']) + '*')
+    vet_procs = VetProcedureDocument.search().filter("term", pet_id=pid).query('match', name=str(request.GET['name'])) # .query('wildcard', purpose='*' + str(request.GET['name']) + '*')
     procedures = vet_procs.to_queryset().values('id', 'pet_id', 'user_id', 'purpose', 'symptoms', 
                                                   'diagnosis', 'recomms', 'recipe', 'proc_date')
     
