@@ -9,6 +9,7 @@ from django.views.decorators.http import require_GET, require_POST
 from .forms import PetForm, PetUpdateForm, PetAvatarForm
 from .documents import PetDocument
 
+from elasticsearch_dsl.query import Q
 # Create your views here.
 
 @csrf_exempt
@@ -230,15 +231,18 @@ def search(request):
     if not user.vet:
         return JsonResponse({"error": "You aren't veterinar"})
     
-    pets = PetDocument.search().query('wildcard', name='*' + str(request.GET['name']) + '*')
-    pets = pets.to_queryset().values('id', 'user_id', 'name', 'species', 'breed', 
+    pets = PetDocument.search().query(Q('wildcard', name='*' + str(request.GET['name']) + '*') | 
+                                      Q('wildcard', user__first_name='*' + str(request.GET['name']) + '*') |
+                                      Q('wildcard', user__last_name='*' + str(request.GET['name']) + '*') |
+                                      Q('wildcard', user__patroymic='*' + str(request.GET['name']) + '*'))
+    pets = pets.to_queryset().values('id', 'user', 'name', 'species', 'breed', 
                   'color', 'birth_date', 'gender', 'chip')
     
     patients = []
     
     for pet in pets:
 
-        usr = User.objects.filter(id=pet['user_id']).first()
+        usr = User.objects.filter(id=pet['user']).first()
         patr = usr.patronymic[0] if usr.patronymic != '' else ''
         name = usr.first_name[0] if usr.first_name != '' else ''
 
@@ -253,5 +257,8 @@ def search(request):
         pat = {'patient': f"{pet['name']}, {pet['species']}", 'color': pet['color'], 'birth_date': pet['birth_date'], 
         'gender': pet['gender'], 'chip': pet['chip'], 'owner': owner, 'card': pet['id']}
         patients.append(pat)
+
+    
+    unique_patients = list({p['card']:p for p in patients}.values())
     
     return JsonResponse({'patients': list(patients)})

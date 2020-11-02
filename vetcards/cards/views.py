@@ -9,6 +9,9 @@ from django.views.decorators.http import require_GET, require_POST
 from .forms import ProcedureForm, OwnerProcedureForm
 from .documents import OwnerProcedureDocument, VetProcedureDocument
 
+from elasticsearch_dsl.query import Q
+
+import datetime
 # Create your views here.
 
 @csrf_exempt
@@ -137,8 +140,38 @@ def search_owner_procs(request):
     
     if pet.user.id != uid:
         return JsonResponse({"errors": "you aren't owner of this pet"})
+
+    name = str(request.GET['name'])
+    months = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"]
+    days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    owner_procs = []
+
+    idx = -1
+    counter = -1
+
+    if len(name) > 1:
+        for m in months:
+            counter += 1
+            if m.__contains__(name):
+                idx = counter
+                break
+
+    if idx > -1:
+        now = datetime.datetime.now()
+
+        day = days[idx]
+
+        month = "0" + str(idx+1) if (idx + 1) < 10 else str(idx + 1)
+
+        if idx == 1:
+            if now.year % 4 == 0 or now.year % 100 != 0 or now.year % 100 == 0 and now.year % 400 == 0:
+                day = 29
+        first = str(now.year) + "-" + month + "-01T00:00:00"
+        last = str(now.year) + "-" + month + "-" + str(day) + "T23:59:59"
+        owner_procs = OwnerProcedureDocument.search().filter("term", pet_id=pid).query(Q('range', proc_date={'gte': first, 'lte': last}) | Q('wildcard', name='*' + name + '*'))
+    else:
+        owner_procs = OwnerProcedureDocument.search().filter("term", pet_id=pid).query('wildcard', name='*' + name + '*')
     
-    owner_procs = OwnerProcedureDocument.search().filter("term", pet_id=pid).query('match', name=str(request.GET['name'])) # .query('wildcard', name='*' + str(request.GET['name']) + '*')
     procedures = owner_procs.to_queryset().values('id', 'pet_id', 'user_id', 'name', 'description', 'proc_date')
     
     return JsonResponse({'procedures': list(procedures)})
@@ -157,9 +190,37 @@ def search_vet_procs(request):
     
     if pet.user.id != uid and not user.vet:
         return JsonResponse({"errors": "you aren't a veterinar or owner of this pet"})
+
+    vet_procs = []
+    name = str(request.GET['name'])
+    months = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"]
+    days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+
+    idx = -1
+    counter = -1
+
+    if len(name) > 1:
+        for m in months:
+            counter += 1
+            if m.__contains__(name):
+                idx = counter
+                break
     
-    vet_procs = VetProcedureDocument.search().filter("term", pet_id=pid).query('match', name=str(request.GET['name'])) # .query('wildcard', purpose='*' + str(request.GET['name']) + '*')
+    if idx > -1:
+        now = datetime.datetime.now()
+        day = days[idx]
+
+        month = "0" + str(idx+1) if (idx + 1) < 10 else str(idx + 1)
+
+        if idx == 1:
+            if now.year % 4 == 0 or now.year % 100 != 0 or now.year % 100 == 0 and now.year % 400 == 0:
+                day = 29
+        first = str(now.year) + "-" + month + "-01T00:00:00"
+        last = str(now.year) + "-" + month + "-" + str(day) + "T23:59:59"
+        vet_procs = VetProcedureDocument.search().filter("term", pet_id=pid).query(Q('range', proc_date={'gte': first, 'lte': last}) | Q('wildcard', name='*' + name + '*'))
+    else:
+        vet_procs = VetProcedureDocument.search().filter("term", pet_id=pid).query('wildcard', purpose='*' + name + '*')
     procedures = vet_procs.to_queryset().values('id', 'pet_id', 'user_id', 'purpose', 'symptoms', 
-                                                  'diagnosis', 'recomms', 'recipe', 'proc_date')
+                                                  'diagnosis', 'recomms', 'recipe', 'proc_date') 
     
     return JsonResponse({'procedures': list(procedures)})
