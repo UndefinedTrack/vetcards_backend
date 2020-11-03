@@ -152,7 +152,7 @@ def search_owner_procs(request):
     if len(name) > 1:
         for m in months:
             counter += 1
-            if m.__contains__(name):
+            if m.__contains__(name) or len(name) > 2 and m.__contains__(name[:-1]):
                 idx = counter
                 break
 
@@ -168,9 +168,11 @@ def search_owner_procs(request):
                 day = 29
         first = str(now.year) + "-" + month + "-01T00:00:00"
         last = str(now.year) + "-" + month + "-" + str(day) + "T23:59:59"
-        owner_procs = OwnerProcedureDocument.search().filter("term", pet_id=pid).query(Q('range', proc_date={'gte': first, 'lte': last}) | Q('wildcard', name='*' + name + '*'))
+        owner_procs = OwnerProcedureDocument.search().filter("term", pet_id=pid).query(Q('range', proc_date={'gte': first, 'lte': last}) | 
+                                                                                       Q('wildcard', name='*' + name + '*') |
+                                                                                       Q('match', name=name))
     else:
-        owner_procs = OwnerProcedureDocument.search().filter("term", pet_id=pid).query('wildcard', name='*' + name + '*')
+        owner_procs = OwnerProcedureDocument.search().filter("term", pet_id=pid).query(Q('wildcard', name='*' + name + '*') | Q('match', name=name))
     
     procedures = owner_procs.to_queryset().values('id', 'pet_id', 'user_id', 'name', 'description', 'proc_date')
     
@@ -202,7 +204,7 @@ def search_vet_procs(request):
     if len(name) > 1:
         for m in months:
             counter += 1
-            if m.__contains__(name):
+            if m.__contains__(name) or len(name) > 2 and m.__contains__(name[:-1]):
                 idx = counter
                 break
     
@@ -217,9 +219,11 @@ def search_vet_procs(request):
                 day = 29
         first = str(now.year) + "-" + month + "-01T00:00:00"
         last = str(now.year) + "-" + month + "-" + str(day) + "T23:59:59"
-        vet_procs = VetProcedureDocument.search().filter("term", pet_id=pid).query(Q('range', proc_date={'gte': first, 'lte': last}) | Q('wildcard', name='*' + name + '*'))
+        vet_procs = VetProcedureDocument.search().filter("term", pet_id=pid).query(Q('range', proc_date={'gte': first, 'lte': last}) | 
+                                                                                   Q('wildcard', name='*' + name + '*') |
+                                                                                   Q('match', name=name))
     else:
-        vet_procs = VetProcedureDocument.search().filter("term", pet_id=pid).query('wildcard', purpose='*' + name + '*')
+        vet_procs = VetProcedureDocument.search().filter("term", pet_id=pid).query(Q('wildcard', purpose='*' + name + '*') | Q('match', name=name))
     procedures = vet_procs.to_queryset().values('id', 'pet_id', 'user_id', 'purpose', 'symptoms', 
                                                   'diagnosis', 'recomms', 'recipe', 'proc_date') 
     
