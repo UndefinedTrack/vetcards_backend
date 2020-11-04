@@ -29,4 +29,4 @@ class PetDocument(Document):
         )
         
     def get_instances_from_related(self, related_instance):
-        return related_instance.pet
+        pass
