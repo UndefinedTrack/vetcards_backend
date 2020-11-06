@@ -54,7 +54,7 @@ def update_user_info(request):
     
     if form.is_valid():
         
-        user = User.objects.filter(id=form.cleaned_data['pk']).first()
+        user = User.objects.filter(id=form.cleaned_data['pk'])[0]
         
         if user == None:
             return JsonResponse({"errors": "User not found"})
@@ -67,9 +67,11 @@ def update_user_info(request):
                 
         user.save()
 
+        avatar = user.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/users/avatars/') if user.avatar.url != '' else ''
+
         usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
                'patronymic': user.patronymic, 'last_name': user.last_name,
-               'phone': user.phone, 'email': user.email}
+               'phone': user.phone, 'email': user.email, 'avatar': avatar}
         
         return JsonResponse({"user": usr})
             
@@ -83,10 +85,15 @@ def get_user_info(request):
     
     User = apps.get_model('users.User')
     
-    user = User.objects.filter(id=int(request.GET['uid'])).values('id', 'username', 'first_name', 'patronymic', 
-                                                   'last_name', 'phone', 'email')
+    user = User.objects.filter(id=int(request.GET['uid'])).first()
+
+    avatar = user.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/users/avatars/') if user.avatar.url != '' else ''
+
+    usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
+               'patronymic': user.patronymic, 'last_name': user.last_name,
+               'phone': user.phone, 'email': user.email, 'avatar': avatar}
     
-    return JsonResponse({"user": list(user)[0]})
+    return JsonResponse({"user": usr})
 
 @require_GET
 def vets_list(request):

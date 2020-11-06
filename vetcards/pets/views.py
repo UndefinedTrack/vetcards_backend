@@ -68,9 +68,11 @@ def update_pet_info(request):
                 
         pet.save()
 
+        avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
+
         pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
               'species': pet.species, 'breed': pet.breed, 'color': pet.color, 
-              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip}
+              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'avatar': avatar}
         
         return JsonResponse({"pet": pt})
             
@@ -104,11 +106,20 @@ def pets_list(request):
 
     Pet = apps.get_model('pets.Pet')
     
-    pets = Pet.objects.filter(user_id=int(request.GET['uid'])).values('id', 'user_id', 'name', 
-                                                       'species', 'breed', 'color', 'birth_date',
-                                                       'gender', 'chip')
+    pets = Pet.objects.filter(user_id=int(request.GET['uid']))
+
+    pts = []
+    for pet in pets:
+
+        avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
+
+        pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
+              'species': pet.species, 'breed': pet.breed, 'color': pet.color, 
+              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'avatar': avatar}
+
+        pts.append(pt)
     
-    return JsonResponse({'pets': list(pets)})
+    return JsonResponse({'pets': list(pts)})
 
 @require_GET
 def patients_list(request):
@@ -140,8 +151,11 @@ def patients_list(request):
 
         if name == '':
             owner = f'{pet.user.last_name}'
+
+        avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
         
-        pat = {'patient': f'{pet.name}, {pet.species}', 'color': pet.color, 'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id}
+        pat = {'patient': f'{pet.name}, {pet.species}', 'color': pet.color, 'birth_date': pet.birth_date, 
+               'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id, 'avatar': avatar}
         patients.append(pat)
 
     return JsonResponse({'patients': list(patients)})
@@ -162,9 +176,11 @@ def pet_info(request):
     
     if pet.user.id != uid and not user.vet:
         return JsonResponse({"error": "You aren't veterinar or owner of the pet"})
+
+    avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
     
     pt = {'id': pet.id, 'name': pet.name, 'species': pet.species, 'breed': pet.breed, 'color': pet.color,
-          'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip}
+          'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'avatar': avatar}
     
     return JsonResponse({'pet': pt})
 
@@ -235,27 +251,27 @@ def search(request):
                                       Q('wildcard', user__first_name='*' + str(request.GET['name']) + '*') |
                                       Q('wildcard', user__last_name='*' + str(request.GET['name']) + '*') |
                                       Q('wildcard', user__patroymic='*' + str(request.GET['name']) + '*'))
-    pets = pets.to_queryset().values('id', 'user', 'name', 'species', 'breed', 
-                  'color', 'birth_date', 'gender', 'chip')
+    pets = pets.to_queryset()
     
     patients = []
     
     for pet in pets:
 
-        usr = User.objects.filter(id=pet['user']).first()
-        patr = usr.patronymic[0] if usr.patronymic != '' else ''
-        name = usr.first_name[0] if usr.first_name != '' else ''
+        patr = pet.user.patronymic[0] if pet.user.patronymic != '' else ''
+        name = pet.user.first_name[0] if pet.user.first_name != '' else ''
 
-        owner = f'{usr.last_name} {name}.{patr}.'
+        owner = f'{pet.user.last_name} {name}.{patr}.'
 
         if patr == '':
-            owner = f'{usr.last_name} {name}.'
+            owner = f'{pet.user.last_name} {name}.'
 
         if name == '':
-            owner = f'{usr.last_name}'
+            owner = f'{pet.user.last_name}'
+
+        avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
         
-        pat = {'patient': f"{pet['name']}, {pet['species']}", 'color': pet['color'], 'birth_date': pet['birth_date'], 
-        'gender': pet['gender'], 'chip': pet['chip'], 'owner': owner, 'card': pet['id']}
+        pat = {'patient': f"{pet.name}, {pet.species}", 'color': pet.color, 'birth_date': pet.birth_date, 
+        'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id, 'avatar': avatar}
         patients.append(pat)
 
     
