@@ -19,6 +19,8 @@ from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('auth/', include('djoser.urls')),
+    path('auth/', include('djoser.urls.jwt')),
     path('users/', include('users.urls')),
     path('cards/', include('cards.urls')),
     path('pets/', include('pets.urls')),

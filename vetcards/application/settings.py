@@ -47,6 +47,9 @@ INSTALLED_APPS = [
     'notifications',
     'schedule',
     'django_elasticsearch_dsl',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'djoser',
 ]
 
 MIDDLEWARE = [
@@ -59,6 +62,22 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+DJOSER = {
+    # 'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
+    # 'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
+    # 'ACTIVATION_URL': '#/activate/{uid}/{token}',
+    # 'SEND_ACTIVATION_EMAIL': True,
+    'SERIALIZERS': {
+        'user_create': 'users.serializers.UserRegistrationSerializer'
+    }
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
 
 ROOT_URLCONF = 'application.urls'
 
@@ -164,6 +183,12 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+FRONTEND_URL = 'https://udefinedtrack.github.io/vetcards_frontend/#/'
+'''LOGIN_URL = 'login'
+LOGOUT_URL = 'logout'
+LOGIN_REDIRECT_URL = FRONTEND_URL + 'profile'
+LOGOUT_REDIRECT_URL = FRONTEND_URL + 'login'''
 
 
 # Static files (CSS, JavaScript, Images)

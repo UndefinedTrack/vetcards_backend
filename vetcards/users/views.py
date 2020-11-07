@@ -7,7 +7,7 @@ from django.contrib.auth.hashers import make_password
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
-from .forms import UserForm, UpdateUserForm, UserAvatarForm
+from .forms import SignUpForm, UpdateUserForm, UserAvatarForm
 
 # Create your views here.
 
@@ -22,9 +22,19 @@ def create_user(request):
     '''Создание пользователя'''
     
     User = apps.get_model('users.User')
-    form = UserForm(request.POST)
+    form = SignUpForm(request.POST)
     
     if form.is_valid():
+
+        user = User.objects.filter(username=form.cleaned_data['username']).first()
+
+        if user != None:
+            return JsonResponse({"error": "User with such username already exists"})
+
+        user = User.objects.filter(email=form.cleaned_data['email']).first()
+
+        if user != None:
+            return JsonResponse({"error": "User with such email already exists"})
         
         user = User.objects.create(username=form.cleaned_data['username'],
                                    password=make_password(form.cleaned_data['password']),
@@ -41,6 +51,11 @@ def create_user(request):
         return JsonResponse({"user": usr})
         
     return JsonResponse({"errors": form.errors})
+
+@csrf_exempt
+@require_POST
+def auth_user(request):
+    pass
 
 
 @csrf_exempt
