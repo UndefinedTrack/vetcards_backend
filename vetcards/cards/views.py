@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
-from .forms import ProcedureForm, OwnerProcedureForm
+from .forms import ProcedureForm, OwnerProcedureForm, UpdateProcedureForm, UpdateOwnerProcedureForm
 from .documents import OwnerProcedureDocument, VetProcedureDocument
 
 from elasticsearch_dsl.query import Q
@@ -43,7 +43,7 @@ def create_vet_procedure(request):
         
         proc = {'id': procedure.id, 'pet_id': procedure.pet_id, 'user_id': procedure.user_id,
                 'purpose': procedure.purpose, 'symptoms': procedure.symptoms,
-                'diagnosis': procedure.recipe, 'recomms': procedure.recomms,
+                'diagnosis': procedure.diagnosis, 'recomms': procedure.recomms,
                 'recipe': procedure.recipe, 'proc_date': procedure.proc_date}
         
         return JsonResponse({"procedure": proc})
@@ -228,3 +228,119 @@ def search_vet_procs(request):
                                                   'diagnosis', 'recomms', 'recipe', 'proc_date') 
     
     return JsonResponse({'procedures': list(procedures)})
+
+
+@csrf_exempt
+@require_POST
+def delete_owner_procedure(request):
+
+    '''Удаление домашней процедуры'''
+    
+    OwnerProcedure = apps.get_model('cards.OwnerProcedure')
+    
+    uid = int(request.POST['uid'])
+    pid = int(request.POST['pid'])
+    
+    proc = OwnerProcedure.objects.filter(id=int(pid)).first()
+    
+    if proc.user.id == uid:
+        proc.delete()
+        
+        return JsonResponse({"status": "ok"})
+    
+    return JsonResponse({"status": "fail"})
+
+@csrf_exempt
+@require_POST
+def delete_vet_procedure(request):
+
+    '''Удаление процедуры, проведённой ветеринаром'''
+    
+    Procedure = apps.get_model('cards.Procedure')
+    
+    uid = int(request.POST['uid'])
+    pid = int(request.POST['pid'])
+    
+    proc = Procedure.objects.filter(id=int(pid)).first()
+    
+    if proc.user.id == uid:
+        proc.delete()
+        
+        return JsonResponse({"status": "ok"})
+    
+    return JsonResponse({"status": "fail"})
+
+
+@csrf_exempt
+@require_POST
+def update_owner_procedure(request):
+
+    '''Обновление информации о домашней процедуре'''
+    
+    OwnerProcedure = apps.get_model('pets.OwnerProcedure')
+    User = apps.get_model('users.User')
+    
+    form = UpdateOwnerProcedureForm(request.POST)
+    
+    if form.is_valid():
+        
+        proc = OwnerProcedure.objects.filter(id=form.cleaned_data['pk']).first()
+        user = User.objects.filter(id=form.cleaned_data['user'].id).first()
+        
+        if proc == None:
+            return JsonResponse({"errors": "Procedure not found"})
+
+        if proc.user.id != form.cleaned_data['user'].id:
+            return JsonResponse({"error": "You aren't owner of this procedure"})
+        
+        for k in form.cleaned_data.keys():
+            if k != 'user' and k != 'pk' and form.cleaned_data[k] != '':
+                proc.__dict__[k] = form.cleaned_data[k]
+                
+        proc.save()
+
+        procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
+                'name': proc.name, 'description': proc.description, 'proc_date': proc.proc_date}
+
+        
+        return JsonResponse({"procedure": procedure})
+            
+    return JsonResponse({"errors": form.errors})
+
+@csrf_exempt
+@require_POST
+def update_vet_procedure(request):
+
+    '''Обновление информации о процедуре, проведённой ветеринаром'''
+    
+    Procedure = apps.get_model('pets.Procedure')
+    User = apps.get_model('users.User')
+    
+    form = UpdateProcedureForm(request.POST)
+    
+    if form.is_valid():
+        
+        proc = Procedure.objects.filter(id=form.cleaned_data['pk']).first()
+        user = User.objects.filter(id=form.cleaned_data['user'].id).first()
+        
+        if proc == None:
+            return JsonResponse({"errors": "Procedure not found"})
+
+        if proc.user.id != form.cleaned_data['user'].id:
+            return JsonResponse({"error": "You aren't owner of this procedure"})
+        
+        for k in form.cleaned_data.keys():
+            if k != 'user' and k != 'pk' and form.cleaned_data[k] != '':
+                proc.__dict__[k] = form.cleaned_data[k]
+                
+        proc.save()
+
+        procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
+                'purpose': proc.purpose, 'symptoms': proc.symptoms,
+                'diagnosis': proc.disagnosis, 'recomms': proc.recomms,
+                'recipe': proc.recipe, 'proc_date': proc.proc_date}
+
+        
+        return JsonResponse({"procedure": procedure})
+            
+    return JsonResponse({"errors": form.errors})
