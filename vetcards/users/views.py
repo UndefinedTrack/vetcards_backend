@@ -82,7 +82,7 @@ def update_user_info(request):
                 
         user.save()
 
-        avatar = user.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/users/avatars/') if user.avatar.url != '' else ''
+        avatar = user.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/users/avatars/') if user.avatar else ''
 
         usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
                'patronymic': user.patronymic, 'last_name': user.last_name,
@@ -102,7 +102,10 @@ def get_user_info(request):
     
     user = User.objects.filter(id=int(request.GET['uid'])).first()
 
-    avatar = user.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/users/avatars/') if user.avatar.url != '' else ''
+    if user == None:
+        return JsonResponse({"errors": "User not found"})
+
+    avatar = user.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/users/avatars/') if user.avatar else ''
 
     usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
                'patronymic': user.patronymic, 'last_name': user.last_name,
