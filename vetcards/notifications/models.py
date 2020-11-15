@@ -5,6 +5,7 @@ from django.db import models
 class Notification(models.Model):
     pet = models.ForeignKey(to='pets.Pet', on_delete=models.CASCADE, verbose_name='Питомец')
     user = models.ForeignKey(to='users.User', on_delete=models.CASCADE, verbose_name='Пользователь')
+    notif_type = models.TextField(max_length=128, null=True, verbose_name='Тип процедуры')
     description = models.TextField(max_length=128, null=True, verbose_name='Описание')
     repeat = models.TextField(max_length=30, null=True, verbose_name='Повторять')
     notif_date = models.DateField(null=True, auto_now_add=True, verbose_name='Дата')

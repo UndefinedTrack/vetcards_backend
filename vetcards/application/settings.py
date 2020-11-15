@@ -208,6 +208,13 @@ LOGOUT_URL = 'logout'
 LOGIN_REDIRECT_URL = FRONTEND_URL + 'profile'
 LOGOUT_REDIRECT_URL = FRONTEND_URL + 'login'''
 
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 465
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = 'undefined.track@gmail.com'
+EMAIL_HOST_PASSWORD = 'undefined2020'
+DEFAULT_FROM_EMAIL = 'undefined.track@gmail.com'
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/

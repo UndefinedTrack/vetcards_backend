@@ -36,6 +36,7 @@ def create_notification(request):
 
         notification = Notification.objects.create(pet_id=form.cleaned_data['pet'].id,
                                                 user_id=form.cleaned_data['user'].id,
+                                                notif_type=form.cleaned_data['notif_type'],
                                                 description=form.cleaned_data['description'],
                                                 repeat=form.cleaned_data['repeat'])
         
@@ -99,7 +100,7 @@ def notifications_list(request):
     if notifications:
         return JsonResponse({'notifications': notifications})
     
-    notifications = Notification.objects.filter(pet_id=int(pid)).values('id', 'pet_id', 'user_id', 'description', 'repeat', 'notif_date')
+    notifications = Notification.objects.filter(pet_id=int(pid)).values('id', 'pet_id', 'user_id', 'notif_type', 'description', 'repeat', 'notif_date')
     cache.set(f'notif_list_{pid}', list(notifications))
     
     return JsonResponse({'notifications': list(notifications)})
