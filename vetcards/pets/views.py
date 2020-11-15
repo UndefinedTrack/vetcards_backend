@@ -302,9 +302,20 @@ def search(request):
     uid = int(request.GET['uid'])
 
     user = User.objects.filter(id=uid).first()
+    name = request.GET['name']
 
     if not user.vet:
         return JsonResponse({"error": "You aren't veterinar"})
+
+    if name == '':
+        patients = cache.get('patients')
+
+        if patients:
+            return JsonResponse({'patients': patients})
+    else:
+        patients = cache.get(f'patients_{name}')
+        if patients:
+            return JsonResponse({'patients': patients})
     
     pets = PetDocument.search().query(Q('wildcard', name='*' + str(request.GET['name']) + '*') | 
                                       Q('wildcard', user__first_name='*' + str(request.GET['name']) + '*') |
@@ -335,5 +346,10 @@ def search(request):
 
     
     unique_patients = list({p['card']:p for p in patients}.values())
+
+    if name == '':
+        cache.set('patients', unique_patients)
+    else:
+        cache.set(f'patients_{name}', unique_patients)
     
-    return JsonResponse({'patients': list(patients)})
+    return JsonResponse({'patients': unique_patients})
