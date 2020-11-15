@@ -109,7 +109,7 @@ def vet_procs_list(request):
     Procedure = apps.get_model('cards.Procedure')
 
     pid = int(request.GET['pid'])
-    uid = int(request.user.id) # request.GET['uid'])
+    uid = int(request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
     user = User.objects.filter(id=int(uid)).first()
@@ -138,7 +138,7 @@ def owner_procs_list(request):
     OwnerProcedure = apps.get_model('cards.OwnerProcedure')
 
     pid = int(request.GET['pid'])
-    uid = int(request.user.id) # request.GET['uid'])
+    uid = int(request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
     
@@ -162,7 +162,7 @@ def search_owner_procs(request):
     Pet = apps.get_model('pets.Pet')
     
     pid = int(request.GET['pid'])
-    uid = int(request.user.id) # request.GET['uid'])
+    uid = int(request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
     
@@ -213,7 +213,7 @@ def search_vet_procs(request):
     User = apps.get_model('users.User')
 
     pid = int(request.GET['pid'])
-    uid = int(request.user.id) # request.GET['uid'])
+    uid = int(request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
     user = User.objects.filter(id=int(uid)).first()
@@ -266,7 +266,7 @@ def delete_owner_procedure(request):
     
     OwnerProcedure = apps.get_model('cards.OwnerProcedure')
     
-    uid = int(request.user.id) # request.POST['uid'])
+    uid = int(request.POST['uid'])
     pid = int(request.POST['pid'])
     
     proc = OwnerProcedure.objects.filter(id=int(pid)).first()
@@ -290,7 +290,7 @@ def delete_vet_procedure(request):
     
     Procedure = apps.get_model('cards.Procedure')
     
-    uid = int(request.user.id) # request.POST['uid'])
+    uid = int(request.POST['uid'])
     pid = int(request.POST['pid'])
     
     proc = Procedure.objects.filter(id=int(pid)).first()

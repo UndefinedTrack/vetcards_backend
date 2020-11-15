@@ -41,6 +41,8 @@ def create_pet(request):
               'species': pet.species, 'breed': pet.breed, 'color': pet.color,
               'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip}
 
+        uid = pet.user.id
+
         pets = cache.get(f'pets_list_{uid}')
 
         if pets:
@@ -108,7 +110,7 @@ def delete_pet(request):
     
     Pet = apps.get_model('pets.Pet')
     
-    uid = int(request.user.id) # request.POST['uid'])
+    uid = int(request.POST['uid'])
     pid = int(request.POST['pid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
@@ -132,7 +134,7 @@ def delete_pet(request):
 @require_GET
 def pets_list(request):
 
-    uid = request.user.id
+    uid = request.GET['uid']
 
     pts = cache.get(f'pets_list_{uid}')
 
@@ -168,7 +170,7 @@ def patients_list(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
 
-    uid = int(request.user.id) # int(request.GET['uid'])
+    uid = int(request.GET['uid'])
 
     user = User.objects.filter(id=uid).first()
 
@@ -214,7 +216,7 @@ def pet_info(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
 
-    uid = int(request.user.id) # request.GET['uid'])
+    uid = int(request.GET['uid'])
     pid = int(request.GET['pid'])
     
     pet = Pet.objects.filter(id=pid).first()
@@ -239,8 +241,6 @@ def upload_pet_avatar(request):
     User = apps.get_model('users.User')
     
     form = PetAvatarForm(request.POST, request.FILES)
-
-    uid = int(reauets.user.id)
     
     if form.is_valid():
         
@@ -258,6 +258,8 @@ def upload_pet_avatar(request):
         pet_avatar = {'id': pet.id, 
                       'user': pet.user.id,
                       'avatar': pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/')}
+
+        uid = pet.user.id
 
         pets = cache.get(f'pets_list_{uid}')
 
@@ -297,7 +299,7 @@ def search(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
 
-    uid = int(request.user.id) # request.GET['uid'])
+    uid = int(request.GET['uid'])
 
     user = User.objects.filter(id=uid).first()
 

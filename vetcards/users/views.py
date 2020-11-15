@@ -55,11 +55,6 @@ def create_user(request):
         
     return JsonResponse({"errors": form.errors})
 
-@csrf_exempt
-@require_POST
-def auth_user(request):
-    pass
-
 
 @csrf_exempt
 @require_POST

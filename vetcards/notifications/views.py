@@ -60,7 +60,7 @@ def delete_notification(request):
     
     Notification = apps.get_model('notifications.Notification')
     
-    uid = int(request.user.id) # request.POST['uid'])
+    uid = int(request.POST['uid'])
     nid = int(request.POST['nid'])
     
     notif = Notification.objects.filter(id=int(nid)).first()
@@ -88,7 +88,7 @@ def notifications_list(request):
     Notification = apps.get_model('notifications.Notification')
 
     pid = int(request.GET['pid'])
-    uid = int(request.user.id) # request.GET['uid'])
+    uid = int(request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
 
