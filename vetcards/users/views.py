@@ -7,6 +7,9 @@ from django.contrib.auth.hashers import make_password
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
+
 from .forms import SignUpForm, UpdateUserForm, UserAvatarForm
 
 # Create your views here.
@@ -113,6 +116,7 @@ def get_user_info(request):
     
     return JsonResponse({"user": usr})
 
+@cache_page(60*5)
 @require_GET
 def vets_list(request):
 

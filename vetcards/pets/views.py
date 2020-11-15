@@ -6,6 +6,9 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
+
 from .forms import PetForm, PetUpdateForm, PetAvatarForm
 from .documents import PetDocument
 
@@ -19,6 +22,8 @@ def create_pet(request):
     '''Создание питомца'''
 
     Pet = apps.get_model('pets.Pet')
+
+    uid = request.user.id
     
     form = PetForm(request.POST)
     
@@ -35,6 +40,11 @@ def create_pet(request):
         pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
               'species': pet.species, 'breed': pet.breed, 'color': pet.color,
               'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip}
+
+        pets = cache.get(f'pets_list_{uid}')
+
+        if pets:
+            cache.delete(f'pets_list_{uid}')
         
         return JsonResponse({"pet": pt})
         
@@ -50,6 +60,8 @@ def update_pet_info(request):
     User = apps.get_model('users.User')
     
     form = PetUpdateForm(request.POST)
+
+    uid = request.user.id
     
     if form.is_valid():
         
@@ -73,6 +85,15 @@ def update_pet_info(request):
         pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
               'species': pet.species, 'breed': pet.breed, 'color': pet.color, 
               'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'avatar': avatar}
+
+        pets = cache.get(f'pets_list_{uid}')
+
+        if pets:
+            cache.delete(f'pets_list_{uid}')
+
+        patients = cache.get('patients')
+        if patients:
+            cache.delete('patients')
         
         return JsonResponse({"pet": pt})
             
@@ -87,13 +108,22 @@ def delete_pet(request):
     
     Pet = apps.get_model('pets.Pet')
     
-    uid = int(request.POST['uid'])
+    uid = int(request.user.id) # request.POST['uid'])
     pid = int(request.POST['pid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
     
     if pet.user.id == uid:
         pet.delete()
+
+        pets = cache.get(f'pets_list_{uid}')
+
+        if pets:
+            cache.delete(f'pets_list_{uid}')
+
+        patients = cache.get('patients')
+        if patients:
+            cache.delete('patients')
         
         return JsonResponse({"status": "ok"})
     
@@ -102,11 +132,18 @@ def delete_pet(request):
 @require_GET
 def pets_list(request):
 
+    uid = request.user.id
+
+    pts = cache.get(f'pets_list_{uid}')
+
+    if pts:
+        return JsonResponse({'pets': pts})
+
     '''Выдает список питомцев'''
 
     Pet = apps.get_model('pets.Pet')
     
-    pets = Pet.objects.filter(user_id=int(request.GET['uid']))
+    pets = Pet.objects.filter(user_id=int(uid)) # request.GET['uid']))
 
     pts = []
     for pet in pets:
@@ -118,6 +155,8 @@ def pets_list(request):
               'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'avatar': avatar}
 
         pts.append(pt)
+
+    cache.set(f'pets_list_{uid}', pts)
     
     return JsonResponse({'pets': list(pts)})
 
@@ -129,12 +168,17 @@ def patients_list(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
 
-    uid = int(request.GET['uid'])
+    uid = int(request.user.id) # int(request.GET['uid'])
 
     user = User.objects.filter(id=uid).first()
 
     if not user.vet:
         return JsonResponse({"error": "You aren't veterinar"})
+
+    patients = cache.get('patients')
+
+    if patients:
+        return JsonResponse({'patients': patients})
 
     pets = Pet.objects.all()
 
@@ -158,6 +202,8 @@ def patients_list(request):
                'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id, 'avatar': avatar}
         patients.append(pat)
 
+    cache.set('patients', patients)
+
     return JsonResponse({'patients': list(patients)})
 
 @require_GET
@@ -168,7 +214,7 @@ def pet_info(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
 
-    uid = int(request.GET['uid'])
+    uid = int(request.user.id) # request.GET['uid'])
     pid = int(request.GET['pid'])
     
     pet = Pet.objects.filter(id=pid).first()
@@ -193,6 +239,8 @@ def upload_pet_avatar(request):
     User = apps.get_model('users.User')
     
     form = PetAvatarForm(request.POST, request.FILES)
+
+    uid = int(reauets.user.id)
     
     if form.is_valid():
         
@@ -210,6 +258,15 @@ def upload_pet_avatar(request):
         pet_avatar = {'id': pet.id, 
                       'user': pet.user.id,
                       'avatar': pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/')}
+
+        pets = cache.get(f'pets_list_{uid}')
+
+        if pets:
+            cache.delete(f'pets_list_{uid}')
+
+        patients = cache.get('patients')
+        if patients:
+            cache.delete('patients')
         
         return JsonResponse({'pet_avatar': pet_avatar})
     
@@ -240,7 +297,7 @@ def search(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
 
-    uid = int(request.GET['uid'])
+    uid = int(request.user.id) # request.GET['uid'])
 
     user = User.objects.filter(id=uid).first()
 

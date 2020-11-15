@@ -6,6 +6,9 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
+
 from .forms import ProcedureForm, OwnerProcedureForm, UpdateProcedureForm, UpdateOwnerProcedureForm
 from .documents import OwnerProcedureDocument, VetProcedureDocument
 
@@ -45,6 +48,12 @@ def create_vet_procedure(request):
                 'purpose': procedure.purpose, 'symptoms': procedure.symptoms,
                 'diagnosis': procedure.diagnosis, 'recomms': procedure.recomms,
                 'recipe': procedure.recipe, 'proc_date': procedure.proc_date}
+
+        pid = int(form.cleaned_data['pet'].id)
+
+        procs = cache.get(f'vet_procs_{pid}')
+        if procs:
+            cache.delete(f'vet_procs_{pid}')
         
         return JsonResponse({"procedure": proc})
         
@@ -79,6 +88,11 @@ def create_owner_procedure(request):
         
         proc = {'id': procedure.id, 'pet_id': procedure.pet_id, 'user_id': procedure.user_id,
                 'name': procedure.name, 'description': procedure.description, 'proc_date': procedure.proc_date}
+
+        pid = int(form.cleaned_data['pet'].id)
+        procs = cache.get(f'owner_procs_{pid}')
+        if procs:
+            cache.delete(f'owner_procs_{pid}')
         
         return JsonResponse({"procedure": proc})
         
@@ -95,16 +109,23 @@ def vet_procs_list(request):
     Procedure = apps.get_model('cards.Procedure')
 
     pid = int(request.GET['pid'])
-    uid = int(request.GET['uid'])
+    uid = int(request.user.id) # request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
     user = User.objects.filter(id=int(uid)).first()
     
     if pet.user.id != uid and not user.vet:
         return JsonResponse({"errors": "you aren't a veterinar or owner of this pet"})
+
+    procedures = cache.get(f'vet_procs_{pid}')
+
+    if procedures:
+        return JsonResponse({'procedures': procedures})
     
     procedures = Procedure.objects.filter(pet_id=int(pid)).values('id', 'pet_id', 'user_id', 'purpose', 'symptoms',
                                                                   'diagnosis', 'recomms', 'recipe', 'proc_date')
+
+    cache.set(f'vet_procs_{pid}', list(procedures))
     
     return JsonResponse({'procedures': list(procedures)})
 
@@ -117,14 +138,21 @@ def owner_procs_list(request):
     OwnerProcedure = apps.get_model('cards.OwnerProcedure')
 
     pid = int(request.GET['pid'])
-    uid = int(request.GET['uid'])
+    uid = int(request.user.id) # request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
     
     if pet.user.id != uid:
         return JsonResponse({"errors": "you aren't owner of this pet"})
+
+    procedures = cache.get(f'owner_procs_{pid}')
+
+    if procedures:
+        return JsonResponse({'procedures': procedures})
     
     procedures = OwnerProcedure.objects.filter(pet_id=int(pid)).values('id', 'pet_id', 'user_id', 'name', 'description', 'proc_date')
+    
+    cache.set(f'owner_procs_{pid}', list(procedures))
     
     return JsonResponse({'procedures': list(procedures)})
 
@@ -134,7 +162,7 @@ def search_owner_procs(request):
     Pet = apps.get_model('pets.Pet')
     
     pid = int(request.GET['pid'])
-    uid = int(request.GET['uid'])
+    uid = int(request.user.id) # request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
     
@@ -185,7 +213,7 @@ def search_vet_procs(request):
     User = apps.get_model('users.User')
 
     pid = int(request.GET['pid'])
-    uid = int(request.GET['uid'])
+    uid = int(request.user.id) # request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
     user = User.objects.filter(id=int(uid)).first()
@@ -238,13 +266,17 @@ def delete_owner_procedure(request):
     
     OwnerProcedure = apps.get_model('cards.OwnerProcedure')
     
-    uid = int(request.POST['uid'])
+    uid = int(request.user.id) # request.POST['uid'])
     pid = int(request.POST['pid'])
     
     proc = OwnerProcedure.objects.filter(id=int(pid)).first()
     
     if proc.user.id == uid:
         proc.delete()
+
+        procs = cache.get(f'owner_procs_{pid}')
+        if procs:
+            cache.delete(f'owner_procs_{pid}')
         
         return JsonResponse({"status": "ok"})
     
@@ -258,13 +290,17 @@ def delete_vet_procedure(request):
     
     Procedure = apps.get_model('cards.Procedure')
     
-    uid = int(request.POST['uid'])
+    uid = int(request.user.id) # request.POST['uid'])
     pid = int(request.POST['pid'])
     
     proc = Procedure.objects.filter(id=int(pid)).first()
     
     if proc.user.id == uid:
         proc.delete()
+
+        procs = cache.get(f'vet_procs_{pid}')
+        if procs:
+            cache.delete(f'vet_procs_{pid}')
         
         return JsonResponse({"status": "ok"})
     
@@ -301,6 +337,10 @@ def update_owner_procedure(request):
 
         procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
                 'name': proc.name, 'description': proc.description, 'proc_date': proc.proc_date}
+
+        procs = cache.get(f'owner_procs_{proc.pet.id}')
+        if procs:
+            cache.delete(f'owner_procs_{proc.pet.id}')
 
         
         return JsonResponse({"procedure": procedure})
@@ -339,6 +379,10 @@ def update_vet_procedure(request):
                 'purpose': proc.purpose, 'symptoms': proc.symptoms,
                 'diagnosis': proc.disagnosis, 'recomms': proc.recomms,
                 'recipe': proc.recipe, 'proc_date': proc.proc_date}
+
+        procs = cache.get(f'vet_procs_{proc.pet.id}')
+        if procs:
+            cache.delete(f'vet_procs_{proc.pet.id}')
 
         
         return JsonResponse({"procedure": procedure})

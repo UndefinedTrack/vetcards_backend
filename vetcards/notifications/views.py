@@ -6,6 +6,9 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
+
 from .forms import NotificationForm
 
 # Create your views here.
@@ -38,6 +41,12 @@ def create_notification(request):
         
         notif = {'id': notification.id, 'pet_id': notification.pet_id, 'user_id': notification.user_id,
                 'description': notification.description, 'repeat': notification.repeat, 'notif_date': notification.notif_date}
+
+        pid = notification.pet.id
+
+        notifs = cache.get(f'notif_list_{pid}')
+        if notifs:
+            cache.delete(f'notif_list_{pid}')
         
         return JsonResponse({"notification": notif})
         
@@ -51,13 +60,19 @@ def delete_notification(request):
     
     Notification = apps.get_model('notifications.Notification')
     
-    uid = int(request.POST['uid'])
+    uid = int(request.user.id) # request.POST['uid'])
     nid = int(request.POST['nid'])
     
     notif = Notification.objects.filter(id=int(nid)).first()
     
     if notif.user.id == uid:
+
+        pid = notif.pet.id
         notif.delete()
+
+        notifs = cache.get(f'notif_list_{pid}')
+        if notifs:
+            cache.delete(f'notif_list_{pid}')
         
         return JsonResponse({"status": "ok"})
     
@@ -73,13 +88,18 @@ def notifications_list(request):
     Notification = apps.get_model('notifications.Notification')
 
     pid = int(request.GET['pid'])
-    uid = int(request.GET['uid'])
+    uid = int(request.user.id) # request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
 
     if pet.user.id != uid:
         return JsonResponse({"errors": "you aren't owner of this pet"})
+
+    notifications = cache.get(f'notif_list_{pid}')
+    if notifications:
+        return JsonResponse({'notifications': notifications})
     
     notifications = Notification.objects.filter(pet_id=int(pid)).values('id', 'pet_id', 'user_id', 'description', 'repeat', 'notif_date')
+    cache.set(f'notif_list_{pid}', list(notifications))
     
     return JsonResponse({'notifications': list(notifications)})
