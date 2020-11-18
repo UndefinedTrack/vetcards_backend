@@ -6,6 +6,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 
@@ -25,18 +27,33 @@ def create_vet_procedure(request):
 
     User = apps.get_model('users.User')
     Procedure = apps.get_model('cards.Procedure')
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
     
     form = ProcedureForm(request.POST)
     
     if form.is_valid():
 
-        user = User.objects.filter(id=int(form.cleaned_data['user'].id)).first()
+        # user = User.objects.filter(id=uid).first() # int(form.cleaned_data['user'].id)).first()
         
         if not user.vet:
             return JsonResponse({"errors": "you aren't a veterinar"})
 
         procedure = Procedure.objects.create(pet_id=form.cleaned_data['pet'].id,
-                                             user_id=form.cleaned_data['user'].id,
+                                             user_id=uid,
                                              purpose=form.cleaned_data['purpose'],
                                              symptoms=form.cleaned_data['symptoms'],
                                              diagnosis=form.cleaned_data['diagnosis'],
@@ -69,19 +86,34 @@ def create_owner_procedure(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
     OwnerProcedure = apps.get_model('cards.OwnerProcedure')
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
     
     form = OwnerProcedureForm(request.POST)
     
     if form.is_valid():
 
         pet = Pet.objects.filter(id=int(form.cleaned_data['pet'].id)).first()
-        user = User.objects.filter(id=int(form.cleaned_data['user'].id)).first()
+        # user = User.objects.filter(id=uid).first() # int(form.cleaned_data['user'].id)).first()
         
-        if pet.user.id != form.cleaned_data['user'].id and not user.vet:
+        if pet.user.id != uid and not user.vet:
             return JsonResponse({"errors": "you aren't a veterinar or owner of this pet"})
 
         procedure = OwnerProcedure.objects.create(pet_id=form.cleaned_data['pet'].id,
-                                                  user_id=form.cleaned_data['user'].id,
+                                                  user_id=uid,
                                                   name=form.cleaned_data['name'],
                                                   description=form.cleaned_data['description'],
                                                   proc_date=form.cleaned_data['proc_date'])
@@ -108,11 +140,25 @@ def vet_procs_list(request):
     User = apps.get_model('users.User')
     Procedure = apps.get_model('cards.Procedure')
 
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
+
     pid = int(request.GET['pid'])
-    uid = int(request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
-    user = User.objects.filter(id=int(uid)).first()
+    # user = User.objects.filter(id=int(uid)).first()
     
     if pet.user.id != uid and not user.vet:
         return JsonResponse({"errors": "you aren't a veterinar or owner of this pet"})
@@ -137,8 +183,21 @@ def owner_procs_list(request):
     Pet = apps.get_model('pets.Pet')
     OwnerProcedure = apps.get_model('cards.OwnerProcedure')
 
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
     pid = int(request.GET['pid'])
-    uid = int(request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
     
@@ -160,9 +219,23 @@ def owner_procs_list(request):
 @require_GET
 def search_owner_procs(request):
     Pet = apps.get_model('pets.Pet')
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
     
     pid = int(request.GET['pid'])
-    uid = int(request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
     
@@ -212,11 +285,24 @@ def search_vet_procs(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
 
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
     pid = int(request.GET['pid'])
-    uid = int(request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
-    user = User.objects.filter(id=int(uid)).first()
+    # user = User.objects.filter(id=int(uid)).first()
     
     if pet.user.id != uid and not user.vet:
         return JsonResponse({"errors": "you aren't a veterinar or owner of this pet"})
@@ -266,7 +352,21 @@ def delete_owner_procedure(request):
     
     OwnerProcedure = apps.get_model('cards.OwnerProcedure')
     
-    uid = int(request.POST['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
+
     pid = int(request.POST['pid'])
     
     proc = OwnerProcedure.objects.filter(id=int(pid)).first()
@@ -289,8 +389,21 @@ def delete_vet_procedure(request):
     '''Удаление процедуры, проведённой ветеринаром'''
     
     Procedure = apps.get_model('cards.Procedure')
+
+    auth = None
+    authenticator = JWTAuthentication()
     
-    uid = int(request.POST['uid'])
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
     pid = int(request.POST['pid'])
     
     proc = Procedure.objects.filter(id=int(pid)).first()
@@ -315,18 +428,32 @@ def update_owner_procedure(request):
     
     OwnerProcedure = apps.get_model('pets.OwnerProcedure')
     User = apps.get_model('users.User')
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
     
     form = UpdateOwnerProcedureForm(request.POST)
     
     if form.is_valid():
         
         proc = OwnerProcedure.objects.filter(id=form.cleaned_data['pk']).first()
-        user = User.objects.filter(id=form.cleaned_data['user'].id).first()
+        # user = User.objects.filter(id=form.cleaned_data['user'].id).first()
         
         if proc == None:
             return JsonResponse({"errors": "Procedure not found"})
 
-        if proc.user.id != form.cleaned_data['user'].id:
+        if proc.user.id != user.id: #form.cleaned_data['user'].id:
             return JsonResponse({"error": "You aren't owner of this procedure"})
         
         for k in form.cleaned_data.keys():
@@ -355,18 +482,32 @@ def update_vet_procedure(request):
     
     Procedure = apps.get_model('pets.Procedure')
     User = apps.get_model('users.User')
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
     
     form = UpdateProcedureForm(request.POST)
     
     if form.is_valid():
         
         proc = Procedure.objects.filter(id=form.cleaned_data['pk']).first()
-        user = User.objects.filter(id=form.cleaned_data['user'].id).first()
+        # user = User.objects.filter(id=form.cleaned_data['user'].id).first()
         
         if proc == None:
             return JsonResponse({"errors": "Procedure not found"})
 
-        if proc.user.id != form.cleaned_data['user'].id:
+        if proc.user.id != user.id: # form.cleaned_data['user'].id:
             return JsonResponse({"error": "You aren't owner of this procedure"})
         
         for k in form.cleaned_data.keys():

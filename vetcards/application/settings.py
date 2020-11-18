@@ -30,7 +30,8 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # heroku fix
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['vetcards.herokuapp.com', 'alexander-goryakin.droidroot1995.tk', 'undefinedtrack.github.io/vetcards_frontend/#/', 'localhost:8000', 'localhost']
+ALLOWED_HOSTS = ['vetcards.herokuapp.com', 'alexander-goryakin.droidroot1995.tk', 
+'https://undefinedtrack.github.io/vetcards_frontend/#/', 'localhost:8000', 'localhost', 'localhost:3000', 'https://undefinedtrack.github.io']
 
 
 # Application definition
@@ -79,11 +80,23 @@ DJOSER = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'UPDATE_LAST_LOGIN': True,
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
 }
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
     ),
 }
 
@@ -159,9 +172,9 @@ AUTH_USER_MODEL = "users.User"
 
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ORIGIN_WHITELIST = ['https://undefinedtrack.github.io', 'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000']
+CORS_ORIGIN_WHITELIST = ['https://undefinedtrack.github.io', 'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000', 'https://alexander-goryakin.droidroot1995.tk']
 CSRF_TRUSTED_ORIGINS = ['https://undefinedtrack.github.io/vetcards_frontend/', 'https://undefinedtrack.github.io/vetcards_frontend/#/', 
-'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000']
+'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000', 'https://undefinedtrack.github.io', 'http://localhost:3000/vetcards_frontend']
 
 CELERY_BROKER_URL = 'redis://localhost:6379'  
 CELERY_RESULT_BACKEND = 'redis://localhost:6379'  
@@ -172,7 +185,7 @@ CELERY_TIMEZONE = 'Europe/Moscow'
 CELERY_BEAT_SCHEDULE = {
     'notif_sender': {
         'task': 'notifications.tasks.notif_sender',
-        'schedule': 30.0, # crontab(minute=59, hour=23),
+        'schedule': crontab(minute=00, hour=12),
         'args': ()
     },
 }

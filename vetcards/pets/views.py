@@ -6,6 +6,8 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 
@@ -23,12 +25,24 @@ def create_pet(request):
 
     Pet = apps.get_model('pets.Pet')
 
-    uid = request.user.id
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
     
     form = PetForm(request.POST)
     
     if form.is_valid():
-        pet = Pet.objects.create(user_id=form.cleaned_data['user'].id, 
+        pet = Pet.objects.create(user_id=uid, 
                                  name=form.cleaned_data['name'], 
                                  species=form.cleaned_data['species'],
                                  breed=form.cleaned_data['breed'],  
@@ -41,7 +55,7 @@ def create_pet(request):
               'species': pet.species, 'breed': pet.breed, 'color': pet.color,
               'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip}
 
-        uid = pet.user.id
+        # uid = pet.user.id
 
         pets = cache.get(f'pets_list_{uid}')
 
@@ -63,17 +77,29 @@ def update_pet_info(request):
     
     form = PetUpdateForm(request.POST)
 
-    uid = request.user.id
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
     
     if form.is_valid():
         
         pet = Pet.objects.filter(id=form.cleaned_data['pk']).first()
-        user = User.objects.filter(id=form.cleaned_data['user'].id).first()
+        # user = User.objects.filter(id=form.cleaned_data['user'].id).first()
         
         if pet == None:
             return JsonResponse({"errors": "Pet not found"})
 
-        if pet.user.id != form.cleaned_data['user'].id and not user.vet:
+        if pet.user.id != user.id and not user.vet:
             return JsonResponse({"error": "You aren't veterinar or owner of the pet"})
         
         for k in form.cleaned_data.keys():
@@ -110,7 +136,20 @@ def delete_pet(request):
     
     Pet = apps.get_model('pets.Pet')
     
-    uid = int(request.POST['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
     pid = int(request.POST['pid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
@@ -134,7 +173,19 @@ def delete_pet(request):
 @require_GET
 def pets_list(request):
 
-    uid = request.GET['uid']
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
 
     pts = cache.get(f'pets_list_{uid}')
 
@@ -145,7 +196,7 @@ def pets_list(request):
 
     Pet = apps.get_model('pets.Pet')
     
-    pets = Pet.objects.filter(user_id=int(uid)) # request.GET['uid']))
+    pets = Pet.objects.filter(user_id=uid) # request.GET['uid']))
 
     pts = []
     for pet in pets:
@@ -170,9 +221,21 @@ def patients_list(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
 
-    uid = int(request.GET['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
 
-    user = User.objects.filter(id=uid).first()
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
+    # user = User.objects.filter(id=uid).first()
 
     if not user.vet:
         return JsonResponse({"error": "You aren't veterinar"})
@@ -216,11 +279,23 @@ def pet_info(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
 
-    uid = int(request.GET['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
     pid = int(request.GET['pid'])
     
     pet = Pet.objects.filter(id=pid).first()
-    user = User.objects.filter(id=uid).first()
+    # user = User.objects.filter(id=uid).first()
     
     if pet.user.id != uid and not user.vet:
         return JsonResponse({"error": "You aren't veterinar or owner of the pet"})
@@ -241,6 +316,20 @@ def upload_pet_avatar(request):
     User = apps.get_model('users.User')
     
     form = PetAvatarForm(request.POST, request.FILES)
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
     
     if form.is_valid():
         
@@ -259,7 +348,7 @@ def upload_pet_avatar(request):
                       'user': pet.user.id,
                       'avatar': pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/')}
 
-        uid = pet.user.id
+        # uid = pet.user.id
 
         pets = cache.get(f'pets_list_{uid}')
 
@@ -279,19 +368,32 @@ def upload_pet_avatar(request):
 @csrf_exempt
 @require_GET
 def protected_file(request):
-    if request.user.is_authenticated:
-        url = request.path.replace('/pets/avatars', '/protected')
-        print(url)
-        response = HttpResponse(status=200)
-        response['X-Accel-Redirect'] = url
-        print(response.has_header('X-Accel-Redirect'))
-        
-        if 'Expires' in request.GET.keys():
-            response['X-Accel-Expires'] = request.GET['Expires']
-        response['Content-type'] = ''
-        return response
-    else:
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
         return HttpResponse('<h1>File not found</h1>', status=404)
+        
+    uid = auth[0].id
+    user = auth[0]
+
+    url = request.path.replace('/pets/avatars', '/protected')
+    print(url)
+    response = HttpResponse(status=200)
+    response['X-Accel-Redirect'] = url
+    print(response.has_header('X-Accel-Redirect'))
+    
+    if 'Expires' in request.GET.keys():
+        response['X-Accel-Expires'] = request.GET['Expires']
+    response['Content-type'] = ''
+    return response
+        
 
 @require_GET
 def search(request):
@@ -299,9 +401,21 @@ def search(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
 
-    uid = int(request.GET['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
 
-    user = User.objects.filter(id=uid).first()
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
+    # user = User.objects.filter(id=uid).first()
     name = request.GET['name']
 
     if not user.vet:

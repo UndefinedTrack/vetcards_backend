@@ -24,9 +24,9 @@ def notif_sender():
         diff = relativedelta(today, notif.notif_date)
 
         if notif.repeat == 'Раз в день':
-            if diff.days == 1:
+            if diff.days == 1 and diff.months == 0 and diff.years == 0:
                 message = EmailMessage(
-                    'Количество пользователей',
+                    'Напоминание',
                     'Необходимо провести процедуру: ' + notif.notif_type + ' питомцу ' + notif.pet.name + '. Описание процедуры: ' + notif.description + '.',
                     'undefined.track@gmail.com',
                     [notif.user.email],
@@ -39,9 +39,9 @@ def notif_sender():
 
                 continue
         elif notif.repeat == 'Раз в неделю':
-            if diff.days == 7:
+            if diff.days == 7 and diff.months == 0 and diff.years == 0:
                 message = EmailMessage(
-                    'Количество пользователей',
+                    'Напоминание',
                     'Необходимо провести процедуру: ' + notif.notif_type + ' питомцу ' + notif.pet.name + '. Описание процедуры: ' + notif.description + '.',
                     'undefined.track@gmail.com',
                     [notif.user.email],
@@ -54,9 +54,9 @@ def notif_sender():
 
                 continue
         elif notif.repeat == 'Раз в год':
-            if diff.years == 1:
+            if diff.years == 1 and diff.months == 0 and diff.days == 0:
                 message = EmailMessage(
-                    'Количество пользователей',
+                    'Напоминание',
                     'Необходимо провести процедуру: ' + notif.notif_type + ' питомцу ' + notif.pet.name + '. Описание процедуры: ' + notif.description + '.',
                     'undefined.track@gmail.com',
                     [notif.user.email],

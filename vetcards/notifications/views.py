@@ -6,6 +6,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 
@@ -13,7 +15,7 @@ from .forms import NotificationForm
 
 # Create your views here.
 
-
+@csrf_exempt
 @require_POST
 def create_notification(request):
 
@@ -26,16 +28,30 @@ def create_notification(request):
 
     form = NotificationForm(request.POST)
 
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
     if form.is_valid():
     
         pet = Pet.objects.filter(id=int(form.cleaned_data['pet'].id)).first()
-        user = User.objects.filter(id=int(form.cleaned_data['user'].id)).first()
+        # user = User.objects.filter(id=uid).first() # int(form.cleaned_data['user'].id)).first()
         
-        if pet.user.id != form.cleaned_data['user'].id and not user.vet:
+        if pet.user.id != user.id and not user.vet:
             return JsonResponse({"errors": "you aren't a veterinar or owner of this pet"})
 
         notification = Notification.objects.create(pet_id=form.cleaned_data['pet'].id,
-                                                user_id=form.cleaned_data['user'].id,
+                                                user_id=uid,
                                                 notif_type=form.cleaned_data['notif_type'],
                                                 description=form.cleaned_data['description'],
                                                 repeat=form.cleaned_data['repeat'])
@@ -61,7 +77,20 @@ def delete_notification(request):
     
     Notification = apps.get_model('notifications.Notification')
     
-    uid = int(request.POST['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
     nid = int(request.POST['nid'])
     
     notif = Notification.objects.filter(id=int(nid)).first()
@@ -88,8 +117,21 @@ def notifications_list(request):
     Pet = apps.get_model('pets.Pet')
     Notification = apps.get_model('notifications.Notification')
 
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
     pid = int(request.GET['pid'])
-    uid = int(request.GET['uid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
 
