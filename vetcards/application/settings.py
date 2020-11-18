@@ -173,6 +173,7 @@ AUTH_USER_MODEL = "users.User"
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_WHITELIST = ['https://undefinedtrack.github.io', 'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000', 'https://alexander-goryakin.droidroot1995.tk']
+# CORS_ORIGIN_ALLOW_ALL = True 
 CSRF_TRUSTED_ORIGINS = ['https://undefinedtrack.github.io/vetcards_frontend/', 'https://undefinedtrack.github.io/vetcards_frontend/#/', 
 'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000', 'https://undefinedtrack.github.io', 'http://localhost:3000/vetcards_frontend']
 
@@ -185,8 +186,8 @@ CELERY_TIMEZONE = 'Europe/Moscow'
 CELERY_BEAT_SCHEDULE = {
     'notif_sender': {
         'task': 'notifications.tasks.notif_sender',
-        'schedule': crontab(minute=00, hour=12),
-        'args': ()
+        'schedule': crontab(minute=50, hour=14),
+        # 'args': ()
     },
 }
 
@@ -220,13 +221,6 @@ FRONTEND_URL = 'https://udefinedtrack.github.io/vetcards_frontend/#/'
 LOGOUT_URL = 'logout'
 LOGIN_REDIRECT_URL = FRONTEND_URL + 'profile'
 LOGOUT_REDIRECT_URL = FRONTEND_URL + 'login'''
-
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 465
-EMAIL_USE_SSL = True
-EMAIL_HOST_USER = 'undefined.track@gmail.com'
-EMAIL_HOST_PASSWORD = 'undefined2020'
-DEFAULT_FROM_EMAIL = 'undefined.track@gmail.com'
 
 
 # Static files (CSS, JavaScript, Images)

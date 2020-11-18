@@ -383,7 +383,7 @@ def protected_file(request):
     uid = auth[0].id
     user = auth[0]
 
-    url = request.path.replace('/pets/avatars', '/protected')
+    url = request.path.replace('/pets/avatars', '/s3_files')
     print(url)
     response = HttpResponse(status=200)
     response['X-Accel-Redirect'] = url
@@ -391,7 +391,13 @@ def protected_file(request):
     
     if 'Expires' in request.GET.keys():
         response['X-Accel-Expires'] = request.GET['Expires']
+    
     response['Content-type'] = ''
+    response['Access-Control-Allow-Origin'] = 'https://undefinedtrack.github.io'
+    response['Access-Control-Allow-Credentials'] = 'true'
+    response['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response['Access-Control-Allow-Headers'] =  'Accept,Authorization,Cache-Control,Content-Type,DNT,If-Modified-Since,Keep-Alive,Origin,User-Agent,X-Requested-With'
+    
     return response
         
 
