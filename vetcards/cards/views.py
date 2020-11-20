@@ -426,7 +426,7 @@ def update_owner_procedure(request):
 
     '''Обновление информации о домашней процедуре'''
     
-    OwnerProcedure = apps.get_model('pets.OwnerProcedure')
+    OwnerProcedure = apps.get_model('cards.OwnerProcedure')
     User = apps.get_model('users.User')
 
     auth = None
@@ -480,7 +480,7 @@ def update_vet_procedure(request):
 
     '''Обновление информации о процедуре, проведённой ветеринаром'''
     
-    Procedure = apps.get_model('pets.Procedure')
+    Procedure = apps.get_model('cards.Procedure')
     User = apps.get_model('users.User')
 
     auth = None
