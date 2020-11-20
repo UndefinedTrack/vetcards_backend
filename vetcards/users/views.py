@@ -53,7 +53,7 @@ def create_user(request):
         
         usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
                'patronymic': user.patronymic, 'last_name': user.last_name,
-               'phone': user.phone, 'email': user.email}
+               'phone': '' if user.phone is None else user.phone, 'email': user.email}
         
         return JsonResponse({"user": usr})
         
@@ -101,7 +101,7 @@ def update_user_info(request):
 
         usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
                'patronymic': user.patronymic, 'last_name': user.last_name,
-               'phone': user.phone, 'email': user.email, 'avatar': avatar}
+               'phone': '' if user.phone is None else user.phone, 'email': user.email, 'avatar': avatar}
         
         return JsonResponse({"user": usr})
             
@@ -137,7 +137,7 @@ def get_user_info(request):
 
     usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
                'patronymic': user.patronymic, 'last_name': user.last_name,
-               'phone': user.phone, 'email': user.email, 'avatar': avatar, 'vet': user.vet}
+               'phone': '' if user.phone is None else user.phone, 'email': user.email, 'avatar': avatar, 'vet': user.vet}
     
     return JsonResponse({"user": usr})
 
