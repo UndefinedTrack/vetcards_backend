@@ -457,7 +457,7 @@ def update_owner_procedure(request):
             return JsonResponse({"error": "You aren't owner of this procedure"})
         
         for k in form.cleaned_data.keys():
-            if k != 'user' and k != 'pk' and form.cleaned_data[k] != '':
+            if k != 'user' and k != 'pk':
                 proc.__dict__[k] = form.cleaned_data[k]
                 
         proc.save()
@@ -511,7 +511,7 @@ def update_vet_procedure(request):
             return JsonResponse({"error": "You aren't owner of this procedure"})
         
         for k in form.cleaned_data.keys():
-            if k != 'user' and k != 'pk' and form.cleaned_data[k] != '':
+            if k != 'user' and k != 'pk':
                 proc.__dict__[k] = form.cleaned_data[k]
                 
         proc.save()
