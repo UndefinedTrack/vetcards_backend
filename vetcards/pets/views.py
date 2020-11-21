@@ -268,7 +268,7 @@ def patients_list(request):
         avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
         
         pat = {'patient': f'{pet.name}, {pet.species}', 'color': pet.color, 'birth_date': pet.birth_date, 
-               'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'owner_id': pet.user.id, 'card': pet.id, 'sterilized': pet.sterilized,
+               'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id, 'sterilized': pet.sterilized,
                'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 'notes': pet.notes, 'weight': pet.weight, 'avatar': avatar}
         patients.append(pat)
 
@@ -467,7 +467,7 @@ def search(request):
         avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
         
         pat = {'patient': f"{pet.name}, {pet.species}", 'color': pet.color, 'birth_date': pet.birth_date, 
-        'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'owner_id': pet.user.id, 'card': pet.id, 'sterilized': pet.sterilized,
+        'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id, 'sterilized': pet.sterilized,
         'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 'notes': pet.notes, 'weight': pet.weight, 'avatar': avatar}
         patients.append(pat)
 

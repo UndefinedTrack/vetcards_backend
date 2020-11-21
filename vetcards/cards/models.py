@@ -7,10 +7,10 @@ class Procedure(models.Model):
     user = models.ForeignKey(to='users.User', on_delete=models.CASCADE, verbose_name='Ветеринар')
     purpose = models.TextField(max_length=128, null=True, verbose_name='Цель')
     name = models.TextField(max_length=128, null=True, verbose_name='Название')
-    symptoms = models.TextField(max_length=256, null=True, default='', blank=True, verbose_name='Симптомы')
-    diagnosis = models.TextField(max_length=256, null=True, default='', blank=True, verbose_name='Диагноз')
-    recomms = models.TextField(max_length=256, null=True, default='', blank=True, verbose_name='Рекомендации')
-    recipe = models.TextField(max_length=256, null=True, default='', blank=True, verbose_name='Рецепт')
+    symptoms = models.TextField(max_length=256, null=True, blank=True, verbose_name='Симптомы')
+    diagnosis = models.TextField(max_length=256, null=True, blank=True, verbose_name='Диагноз')
+    recomms = models.TextField(max_length=256, null=True, blank=True, verbose_name='Рекомендации')
+    recipe = models.TextField(max_length=256, null=True, blank=True, verbose_name='Рецепт')
     proc_date = models.DateField(verbose_name='Дата')
     
     class Meta:
@@ -21,7 +21,7 @@ class OwnerProcedure(models.Model):
     pet = models.ForeignKey(to='pets.Pet', on_delete=models.CASCADE, verbose_name='Питомец')
     user = models.ForeignKey(to='users.User', on_delete=models.CASCADE, verbose_name='Владелец')
     name = models.TextField(max_length=128, null=True, verbose_name='Цель')
-    description = models.TextField(max_length=256, null=True, default='', blank=True, verbose_name='Описание')
+    description = models.TextField(max_length=256, null=True, blank=True, verbose_name='Описание')
     proc_date = models.DateField(verbose_name='Дата')
     
     class Meta:

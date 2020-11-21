@@ -575,7 +575,7 @@ def update_vet_procedure(request):
             proc_atts.append(att.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/'))
 
         procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
-                'purpose': proc.purpose, 'name': proc.name, 'symptoms': proc.symptoms,
+                'purpose': proc.purpose, 'name': proc.name,'symptoms': proc.symptoms,
                 'diagnosis': proc.disagnosis, 'recomms': proc.recomms,
                 'recipe': proc.recipe, 'proc_date': proc.proc_date, 'attachments': proc_atts}
 

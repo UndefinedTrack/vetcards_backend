@@ -6,7 +6,7 @@ urlpatterns = [
     re_path(r'^avatars/.+$', protected_file, name="protected_file"),
     path('create', create_user, name='create_user'),
     path('update', update_user_info, name='update_user'),
-    path('update_vuinfo', update_vet_user_info, 'update_vet_user_info'),
+    path('update_vuinfo', update_vet_user_info, name='update_vet_user_info'),
     path('info', get_user_info, name='get_user_info'),
     path('vuinfo', get_vet_user_info, name='get_vet_user_info'),
     path('csrf', csrf, name='csrf'),
