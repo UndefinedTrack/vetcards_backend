@@ -186,7 +186,7 @@ def vet_procs_list(request):
 
         procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
                 'purpose': proc.purpose, 'name': proc.name, 'symptoms': proc.symptoms,
-                'diagnosis': proc.disagnosis, 'recomms': proc.recomms,
+                'diagnosis': proc.diagnosis, 'recomms': proc.recomms,
                 'recipe': proc.recipe, 'proc_date': proc.proc_date, 'attachments': proc_atts}
 
         procedures.append(procedure)
@@ -246,7 +246,7 @@ def owner_procs_list(request):
 
         procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
                 'purpose': proc.purpose, 'symptoms': proc.symptoms,
-                'diagnosis': proc.disagnosis, 'recomms': proc.recomms,
+                'diagnosis': proc.diagnosis, 'recomms': proc.recomms,
                 'recipe': proc.recipe, 'proc_date': proc.proc_date, 'attachments': proc_atts}
 
         procedures.append(procedure)
@@ -576,7 +576,7 @@ def update_vet_procedure(request):
 
         procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
                 'purpose': proc.purpose, 'name': proc.name,'symptoms': proc.symptoms,
-                'diagnosis': proc.disagnosis, 'recomms': proc.recomms,
+                'diagnosis': proc.diagnosis, 'recomms': proc.recomms,
                 'recipe': proc.recipe, 'proc_date': proc.proc_date, 'attachments': proc_atts}
 
         procs = cache.get(f'vet_procs_{proc.pet.id}')

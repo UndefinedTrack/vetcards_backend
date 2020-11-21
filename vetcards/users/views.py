@@ -83,8 +83,13 @@ def update_user_info(request):
     uid = auth[0].id
     
     if form.is_valid():
-        
+
         user = auth[0] # User.objects.filter(id=uid)[0] # form.cleaned_data['pk'])[0]
+
+        if user.vet and uid != int(form.cleaned_data['pk']):
+            user = User.objects.filter(id=int(form.cleaned_data['pk']))[0]
+        elif not user.vet and uid != int(form.cleaned_data['pk']):
+            return JsonResponse({"errors": "Your id doesn't match the specified"})
         
         if user == None:
             return JsonResponse({"errors": "User not found"})
@@ -108,56 +113,6 @@ def update_user_info(request):
         return JsonResponse({"user": usr})
             
     return JsonResponse({"errors": form.errors})
-
-@csrf_exempt
-@require_POST
-def update_vet_user_info(request):
-
-    '''Обновление информации о пользователе ветеринаром'''
-    
-    User = apps.get_model('users.User')
-    form = UpdateUserForm(request.POST)
-
-    auth = None
-    authenticator = JWTAuthentication()
-    
-    try:
-        auth = authenticator.authenticate(request)
-    except Exception:
-        print("Invalid token")
-
-    if auth == None:
-        return JsonResponse({"error": "You aren't authenticated"})
-        
-    uid = auth[0].id
-    
-    if form.is_valid():
-        
-        user = User.objects.filter(id=form.cleaned_data['pk'])[0]
-        
-        if user == None:
-            return JsonResponse({"errors": "User not found"})
-        
-        for k in form.cleaned_data.keys():
-            print(k)
-            if k != 'pk' and form.cleaned_data[k] != '':
-                print(user.__dict__[k])
-                user.__dict__[k] = form.cleaned_data[k]
-                
-        user.save()
-
-        avatar = user.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/users/avatars/') if user.avatar else ''
-
-        usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
-               'patronymic': user.patronymic, 'last_name': user.last_name,
-               'phone': '' if user.phone is None else user.phone, 'email': user.email,
-               'avatar': avatar, 'address': user.address, 'passport': user.passport,
-               'vet': user.vet, 'paid_service': user.paid_service, 'super_vet': user.super_vet}
-        
-        return JsonResponse({"user": usr})
-            
-    return JsonResponse({"errors": form.errors})
-    
     
 @require_GET
 def get_user_info(request):
@@ -181,40 +136,10 @@ def get_user_info(request):
     
     user = auth[0] # User.objects.filter(id=uid).first()
 
-    if user == None:
-        return JsonResponse({"errors": "User not found " + str(uid)})
-
-    avatar = user.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/users/avatars/') if user.avatar else ''
-
-    usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
-           'patronymic': user.patronymic, 'last_name': user.last_name,
-           'phone': '' if user.phone is None else user.phone, 'email': user.email, 
-           'avatar': avatar, 'address': user.address, 'passport': user.passport,
-           'vet': user.vet, 'paid_service': user.paid_service, 'super_vet': user.super_vet}
-    
-    return JsonResponse({"user": usr})
-
-@require_GET
-def get_vet_user_info(request):
-
-    '''Получение информации о пользователе'''
-    
-    User = apps.get_model('users.User')
-
-    auth = None
-    authenticator = JWTAuthentication()
-    
-    try:
-        auth = authenticator.authenticate(request)
-    except Exception:
-        print("Invalid token")
-
-    if auth == None:
-        return JsonResponse({"error": "You aren't authenticated"})
-        
-    uid = int(request.GET['uid'])
-    
-    user = User.objects.filter(id=uid).first()
+    if user.vet and uid != int(request.GET['uid']):
+            user = User.objects.filter(id=int(request.GET['uid']))[0]
+    elif not user.vet and uid != int(request.GET['uid']):
+        return JsonResponse({"errors": "Your id doesn't match the specified"})
 
     if user == None:
         return JsonResponse({"errors": "User not found " + str(uid)})

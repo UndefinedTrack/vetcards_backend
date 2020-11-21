@@ -42,6 +42,12 @@ def create_pet(request):
     form = PetForm(request.POST)
     
     if form.is_valid():
+
+        if user.vet and uid != int(form.cleaned_data['user'].id):
+            uid = int(form.cleaned_data['user'].id)
+        elif not user.vet and uid != int(form.cleaned_data['user'].id):
+            return JsonResponse({"errors": "Your id doesn't match the specified"})
+
         pet = Pet.objects.create(user_id=uid, 
                                  name=form.cleaned_data['name'], 
                                  species=form.cleaned_data['species'],
@@ -156,7 +162,7 @@ def delete_pet(request):
     
     pet = Pet.objects.filter(id=int(pid)).first()
     
-    if pet.user.id == uid:
+    if pet.user.id == uid or user.vet:
         pet.delete()
 
         pets = cache.get(f'pets_list_{uid}')
