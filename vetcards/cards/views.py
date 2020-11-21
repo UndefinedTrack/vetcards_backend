@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.apps import apps
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
@@ -11,7 +11,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 
-from .forms import ProcedureForm, OwnerProcedureForm, UpdateProcedureForm, UpdateOwnerProcedureForm
+from .forms import ProcedureForm, OwnerProcedureForm, UpdateProcedureForm, UpdateOwnerProcedureForm, VetAttForm, OwnerAttForm
 from .documents import OwnerProcedureDocument, VetProcedureDocument
 
 from elasticsearch_dsl.query import Q
@@ -55,6 +55,7 @@ def create_vet_procedure(request):
         procedure = Procedure.objects.create(pet_id=form.cleaned_data['pet'].id,
                                              user_id=uid,
                                              purpose=form.cleaned_data['purpose'],
+                                             name=form.cleaned_data['name'],
                                              symptoms=form.cleaned_data['symptoms'],
                                              diagnosis=form.cleaned_data['diagnosis'],
                                              recomms=form.cleaned_data['recomms'],
@@ -62,7 +63,7 @@ def create_vet_procedure(request):
                                              proc_date=form.cleaned_data['proc_date'])
         
         proc = {'id': procedure.id, 'pet_id': procedure.pet_id, 'user_id': procedure.user_id,
-                'purpose': procedure.purpose, 'symptoms': procedure.symptoms,
+                'purpose': procedure.purpose, 'name': procedure.name, 'symptoms': procedure.symptoms,
                 'diagnosis': procedure.diagnosis, 'recomms': procedure.recomms,
                 'recipe': procedure.recipe, 'proc_date': procedure.proc_date}
 
@@ -139,6 +140,7 @@ def vet_procs_list(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
     Procedure = apps.get_model('cards.Procedure')
+    VetAttachment = apps.get_model('cards.VetAttachment')
 
     auth = None
     authenticator = JWTAuthentication()
@@ -167,13 +169,32 @@ def vet_procs_list(request):
 
     if procedures:
         return JsonResponse({'procedures': procedures})
-    
-    procedures = Procedure.objects.filter(pet_id=int(pid)).values('id', 'pet_id', 'user_id', 'purpose', 'symptoms',
-                                                                  'diagnosis', 'recomms', 'recipe', 'proc_date')
 
-    cache.set(f'vet_procs_{pid}', list(procedures))
+    procedures = []
     
-    return JsonResponse({'procedures': list(procedures)})
+    procs = Procedure.objects.filter(pet_id=int(pid)) #.values('id', 'pet_id', 'user_id', 'purpose', 'symptoms',
+                                                      #            'diagnosis', 'recomms', 'recipe', 'proc_date')
+
+    for proc in procs:
+
+        atts = VetAttachment.objects.filter(proc_id=proc.id)
+
+        proc_atts = []
+
+        for att in atts:
+            proc_atts.append(att.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/'))
+
+        procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
+                'purpose': proc.purpose, 'name': proc.name, 'symptoms': proc.symptoms,
+                'diagnosis': proc.disagnosis, 'recomms': proc.recomms,
+                'recipe': proc.recipe, 'proc_date': proc.proc_date, 'attachments': proc_atts}
+
+        procedures.append(procedure)
+
+
+    cache.set(f'vet_procs_{pid}', procedures)
+    
+    return JsonResponse({'procedures': procedures})
 
 @require_GET
 def owner_procs_list(request):
@@ -182,6 +203,7 @@ def owner_procs_list(request):
 
     Pet = apps.get_model('pets.Pet')
     OwnerProcedure = apps.get_model('cards.OwnerProcedure')
+    OwnerAttachment = apps.get_model('cards.OwnerAttachment')
 
     auth = None
     authenticator = JWTAuthentication()
@@ -208,17 +230,36 @@ def owner_procs_list(request):
 
     if procedures:
         return JsonResponse({'procedures': procedures})
+
+    procedures = []
     
-    procedures = OwnerProcedure.objects.filter(pet_id=int(pid)).values('id', 'pet_id', 'user_id', 'name', 'description', 'proc_date')
+    procs = OwnerProcedure.objects.filter(pet_id=int(pid)) # .values('id', 'pet_id', 'user_id', 'name', 'description', 'proc_date')
+
+    for proc in procs:
     
-    cache.set(f'owner_procs_{pid}', list(procedures))
+        atts = OwnerAttachment.objects.filter(proc_id=proc.id)
+
+        proc_atts = []
+
+        for att in atts:
+            proc_atts.append(att.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/'))
+
+        procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
+                'purpose': proc.purpose, 'symptoms': proc.symptoms,
+                'diagnosis': proc.disagnosis, 'recomms': proc.recomms,
+                'recipe': proc.recipe, 'proc_date': proc.proc_date, 'attachments': proc_atts}
+
+        procedures.append(procedure)
     
-    return JsonResponse({'procedures': list(procedures)})
+    cache.set(f'owner_procs_{pid}', procedures)
+    
+    return JsonResponse({'procedures': procedures})
 
 
 @require_GET
 def search_owner_procs(request):
     Pet = apps.get_model('pets.Pet')
+    OwnerAttachment = apps.get_model('cards.OwnerAttachment')
 
     auth = None
     authenticator = JWTAuthentication()
@@ -284,6 +325,7 @@ def search_vet_procs(request):
     
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
+    VetAttachment = apps.get_model('cards.VetAttachment')
 
     auth = None
     authenticator = JWTAuthentication()
@@ -338,7 +380,7 @@ def search_vet_procs(request):
                                                                                    Q('match', name=name))
     else:
         vet_procs = VetProcedureDocument.search().filter("term", pet_id=pid).query(Q('wildcard', purpose='*' + name + '*') | Q('match', name=name))
-    procedures = vet_procs.to_queryset().values('id', 'pet_id', 'user_id', 'purpose', 'symptoms', 
+    procedures = vet_procs.to_queryset().values('id', 'pet_id', 'user_id', 'purpose', 'name', 'symptoms', 
                                                   'diagnosis', 'recomms', 'recipe', 'proc_date') 
     
     return JsonResponse({'procedures': list(procedures)})
@@ -428,6 +470,7 @@ def update_owner_procedure(request):
     
     OwnerProcedure = apps.get_model('cards.OwnerProcedure')
     User = apps.get_model('users.User')
+    OwnerAttachment = apps.get_model('cards.OwnerAttachment')
 
     auth = None
     authenticator = JWTAuthentication()
@@ -462,8 +505,15 @@ def update_owner_procedure(request):
                 
         proc.save()
 
+        atts = OwnerAttachment.objects.filter(proc_id=proc.id)
+
+        proc_atts = []
+
+        for att in atts:
+            proc_atts.append(att.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/'))
+
         procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
-                'name': proc.name, 'description': proc.description, 'proc_date': proc.proc_date}
+                'name': proc.name, 'description': proc.description, 'proc_date': proc.proc_date, 'attachments': proc_atts}
 
         procs = cache.get(f'owner_procs_{proc.pet.id}')
         if procs:
@@ -482,6 +532,7 @@ def update_vet_procedure(request):
     
     Procedure = apps.get_model('cards.Procedure')
     User = apps.get_model('users.User')
+    VetAttachment = apps.get_model('cards.VetAttachment')
 
     auth = None
     authenticator = JWTAuthentication()
@@ -516,10 +567,17 @@ def update_vet_procedure(request):
                 
         proc.save()
 
+        atts = VetAttachment.objects.filter(proc_id=proc.id)
+
+        proc_atts = []
+
+        for att in atts:
+            proc_atts.append(att.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/'))
+
         procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
-                'purpose': proc.purpose, 'symptoms': proc.symptoms,
+                'purpose': proc.purpose, 'name': proc.name, 'symptoms': proc.symptoms,
                 'diagnosis': proc.disagnosis, 'recomms': proc.recomms,
-                'recipe': proc.recipe, 'proc_date': proc.proc_date}
+                'recipe': proc.recipe, 'proc_date': proc.proc_date, 'attachments': proc_atts}
 
         procs = cache.get(f'vet_procs_{proc.pet.id}')
         if procs:
@@ -529,3 +587,142 @@ def update_vet_procedure(request):
         return JsonResponse({"procedure": procedure})
             
     return JsonResponse({"errors": form.errors})
+
+@csrf_exempt
+@require_POST
+def upload_owner_att(request):
+    
+    Pet = apps.get_model('pets.Pet')
+    User = apps.get_model('users.User')
+    OwnerProcedure = apps.get_model('cards.OwnerProcedure')
+    OwnerAttachment = apps.get_model('cards.OwnerAttachment')
+    
+    form = OwnerAttForm(request.POST, request.FILES)
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+    
+    if form.is_valid():
+        
+        proc = OwnerProcedure.objects.filter(id=form.cleaned_data['proc'].id).first()
+        
+        if proc == None:
+            return JsonResponse({"error": "Procedure not found"})
+        
+        if proc.user.id != form.cleaned_data['user']:
+            return JsonResponse({"error": "You aren't owner of the procedure"})
+        
+        attachment = OwnerAttachment.objects.create(user_id=form.cleaned_data['user'].id,
+                                                    proc_id=form.cleaned_data['proc'].id,
+                                                    url=form.cleaned_data['url'])
+        
+        att = {'id': attachment.id, 
+                      'user': attachment.user.id,
+                      'proc': attachment.proc.id,
+                      'url': attachment.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/')}
+
+        procs = cache.get(f'owner_procs_{proc.pet.id}')
+        if procs:
+            cache.delete(f'owner_procs_{proc.pet.id}')
+        
+        return JsonResponse({'attachment': att})
+    
+    
+    return JsonResponse({'errors': form.errors}, status=400)
+
+@csrf_exempt
+@require_POST
+def upload_vet_att(request):
+    
+    Pet = apps.get_model('pets.Pet')
+    User = apps.get_model('users.User')
+    Procedure = apps.get_model('cards.Procedure')
+    VetAttachment = apps.get_model('cards.VetAttachment')
+    
+    form = VetAttForm(request.POST, request.FILES)
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+    
+    if form.is_valid():
+        
+        proc = Procedure.objects.filter(id=form.cleaned_data['proc'].id).first()
+        
+        if proc == None:
+            return JsonResponse({"error": "Procedure not found"})
+        
+        if proc.user.id != form.cleaned_data['user'] and not proc.user.vet:
+            return JsonResponse({"error": "You aren't owner of the procedure"})
+        
+        attachment = VetAttachment.objects.create(user_id=form.cleaned_data['user'].id,
+                                                  proc_id=form.cleaned_data['proc'].id,
+                                                  url=form.cleaned_data['url'])
+        
+        att = {'id': attachment.id, 
+               'user': attachment.user.id,
+               'proc': attachment.proc.id,
+               'url': attachment.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/')}
+
+        procs = cache.get(f'owner_procs_{proc.pet.id}')
+        if procs:
+            cache.delete(f'owner_procs_{proc.pet.id}')
+        
+        return JsonResponse({'attachment': att})
+    
+    
+    return JsonResponse({'errors': form.errors}, status=400)
+
+@csrf_exempt
+@require_GET
+def protected_file(request):
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return HttpResponse('<h1>File not found</h1>', status=404)
+        
+    uid = auth[0].id
+    user = auth[0]
+
+    url = request.path.replace('/cards/attachments', '/s3_files')
+    response = HttpResponse(status=200)
+    response['X-Accel-Redirect'] = url
+    
+    if 'Expires' in request.GET.keys():
+        response['X-Accel-Expires'] = request.GET['Expires']
+    
+    response['Content-type'] = ''
+    response['Access-Control-Allow-Origin'] = 'http://localhost:3000' #https://undefinedtrack.github.io'
+    response['Access-Control-Allow-Credentials'] = 'true'
+    response['Access-Control-Allow-Methods'] = 'GET' # , POST, PUT, DELETE, OPTIONS'
+    response['Access-Control-Allow-Headers'] =  'Accept,Authorization,Cache-Control,Content-Type,DNT,If-Modified-Since,Keep-Alive,Origin,User-Agent,X-Requested-With'
+    
+    return response

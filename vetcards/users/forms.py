@@ -13,7 +13,8 @@ class UpdateUserForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'patronymic',
-                   'last_name', 'phone', 'email']
+                  'last_name', 'phone', 'email',
+                  'address', 'passport', 'paid_service']
         
 class UserAvatarForm(forms.Form):
     

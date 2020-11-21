@@ -10,4 +10,4 @@ class UserDocument(Document):
         
     class Django:
         model = User
-        fields = ['username', 'first_name', 'patronymic', 'last_name']
+        fields = ['username', 'first_name', 'patronymic', 'last_name', 'address', 'passport', 'vet', 'paid_service', 'super_vet']

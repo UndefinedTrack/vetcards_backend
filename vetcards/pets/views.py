@@ -53,7 +53,8 @@ def create_pet(request):
         
         pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
               'species': pet.species, 'breed': pet.breed, 'color': pet.color,
-              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip}
+              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'sterilized': pet.sterilized,
+              'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 'notes': pet.notes, 'weight': pet.weight,}
 
         # uid = pet.user.id
 
@@ -112,7 +113,8 @@ def update_pet_info(request):
 
         pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
               'species': pet.species, 'breed': pet.breed, 'color': pet.color, 
-              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'avatar': avatar}
+              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'sterilized': pet.sterilized,
+              'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 'notes': pet.notes, 'weight': pet.weight,'avatar': avatar}
 
         pets = cache.get(f'pets_list_{uid}')
 
@@ -205,7 +207,9 @@ def pets_list(request):
 
         pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
               'species': pet.species, 'breed': pet.breed, 'color': pet.color, 
-              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'avatar': avatar}
+              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 
+              'sterilized': pet.sterilized, 'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 
+              'notes': pet.notes, 'weight': pet.weight, 'avatar': avatar}
 
         pts.append(pt)
 
@@ -264,7 +268,8 @@ def patients_list(request):
         avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
         
         pat = {'patient': f'{pet.name}, {pet.species}', 'color': pet.color, 'birth_date': pet.birth_date, 
-               'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id, 'avatar': avatar}
+               'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'owner_id': pet.user.id, 'card': pet.id, 'sterilized': pet.sterilized,
+               'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 'notes': pet.notes, 'weight': pet.weight, 'avatar': avatar}
         patients.append(pat)
 
     cache.set('patients', patients)
@@ -303,7 +308,8 @@ def pet_info(request):
     avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
     
     pt = {'id': pet.id, 'name': pet.name, 'species': pet.species, 'breed': pet.breed, 'color': pet.color,
-          'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'avatar': avatar}
+          'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'sterilized': pet.sterilized,
+          'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 'notes': pet.notes, 'weight': pet.weight, 'avatar': avatar}
     
     return JsonResponse({'pet': pt})
 
@@ -393,9 +399,9 @@ def protected_file(request):
         response['X-Accel-Expires'] = request.GET['Expires']
     
     response['Content-type'] = ''
-    response['Access-Control-Allow-Origin'] = 'https://undefinedtrack.github.io'
+    response['Access-Control-Allow-Origin'] = 'http://localhost:3000' #https://undefinedtrack.github.io'
     response['Access-Control-Allow-Credentials'] = 'true'
-    response['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    response['Access-Control-Allow-Methods'] = 'GET' # , POST, PUT, DELETE, OPTIONS'
     response['Access-Control-Allow-Headers'] =  'Accept,Authorization,Cache-Control,Content-Type,DNT,If-Modified-Since,Keep-Alive,Origin,User-Agent,X-Requested-With'
     
     return response
@@ -461,7 +467,8 @@ def search(request):
         avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
         
         pat = {'patient': f"{pet.name}, {pet.species}", 'color': pet.color, 'birth_date': pet.birth_date, 
-        'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id, 'avatar': avatar}
+        'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'owner_id': pet.user.id, 'card': pet.id, 'sterilized': pet.sterilized,
+        'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 'notes': pet.notes, 'weight': pet.weight, 'avatar': avatar}
         patients.append(pat)
 
     

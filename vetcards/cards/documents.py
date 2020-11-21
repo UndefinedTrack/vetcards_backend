@@ -26,5 +26,5 @@ class VetProcedureDocument(Document):
         
     class Django:
         model = Procedure
-        fields = ['id', 'purpose', 'symptoms', 'diagnosis',
+        fields = ['id', 'purpose', 'name', 'symptoms', 'diagnosis',
                     'recomms', 'recipe', 'proc_date']

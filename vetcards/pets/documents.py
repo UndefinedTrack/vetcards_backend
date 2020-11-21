@@ -20,7 +20,8 @@ class PetDocument(Document):
     class Django:
         model = Pet
         fields = ['id', 'name', 'species', 'breed', 
-                  'color', 'birth_date', 'gender', 'chip', 'avatar']
+                  'color', 'birth_date', 'gender', 'chip', 'sterilized', 'vaccinated', 
+                  'contraindications', 'notes', 'weight', 'avatar']
         related_models = [User]
 
     def get_queryset(self):
