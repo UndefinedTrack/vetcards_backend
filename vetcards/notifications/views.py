@@ -50,9 +50,9 @@ def create_notification(request):
         if pet.user.id != user.id and not user.vet:
             return JsonResponse({"errors": "you aren't a veterinar or owner of this pet"})
 
-        if user.vet and uid != int(form.cleaned_data['user']):
+        if user.vet and uid != int(form.cleaned_data['user'].id):
             uid = int(form.cleaned_data['user'])
-        elif not user.vet and uid != int(form.cleaned_data['pk']):
+        elif not user.vet and uid != int(form.cleaned_data['user'].id):
             return JsonResponse({"errors": "Your id doesn't match the specified"})
 
         notification = Notification.objects.create(pet_id=form.cleaned_data['pet'].id,
