@@ -11,7 +11,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 
-from .forms import NotificationForm
+from .forms import NotificationForm, UpdateNotificationForm
 
 # Create your views here.
 
@@ -62,7 +62,8 @@ def create_notification(request):
                                                 repeat=form.cleaned_data['repeat'])
         
         notif = {'id': notification.id, 'pet_id': notification.pet_id, 'user_id': notification.user_id,
-                'description': notification.description, 'repeat': notification.repeat, 'notif_date': notification.notif_date}
+                'description': '' if notification.description is None else notification.description,
+                'repeat': notification.repeat, 'notif_date': notification.notif_date}
 
         pid = notification.pet.id
 
@@ -72,6 +73,63 @@ def create_notification(request):
         
         return JsonResponse({"notification": notif})
         
+    return JsonResponse({"errors": form.errors})
+
+@csrf_exempt
+@require_POST
+def update_notification(request):
+
+    '''Обновление информации о домашней процедуре'''
+    
+    Notification = apps.get_model('notifications.Notification')
+    Pet = apps.get_model('pets.Pet')
+    User = apps.get_model('users.User')
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+    
+    form = UpdateNotificationForm(request.POST)
+    
+    if form.is_valid():
+        
+        notification = Notification.objects.filter(id=form.cleaned_data['pk']).first()
+        # user = User.objects.filter(id=form.cleaned_data['user'].id).first()
+        
+        if notification == None:
+            return JsonResponse({"errors": "Procedure not found"})
+
+        if notification.user.id != user.id: #form.cleaned_data['user'].id:
+            return JsonResponse({"error": "You aren't owner of this procedure"})
+        
+        for k in form.cleaned_data.keys():
+            if k != 'pk':
+                notification.__dict__[k] = form.cleaned_data[k]
+                
+        notification.save()
+
+        notif = {'id': notification.id, 'pet_id': notification.pet_id, 'user_id': notification.user_id,
+                'description': '' if notification.description is None else notification.description, 
+                'repeat': notification.repeat, 'notif_date': notification.notif_date}
+
+        pid = notification.pet.id
+
+        notifs = cache.get(f'notif_list_{pid}')
+        if notifs:
+            cache.delete(f'notif_list_{pid}')
+        
+        return JsonResponse({"notification": notif})
+            
     return JsonResponse({"errors": form.errors})
 
 @csrf_exempt
@@ -147,7 +205,16 @@ def notifications_list(request):
     if notifications:
         return JsonResponse({'notifications': notifications})
     
-    notifications = Notification.objects.filter(pet_id=int(pid)).values('id', 'pet_id', 'user_id', 'notif_type', 'description', 'repeat', 'notif_date')
-    cache.set(f'notif_list_{pid}', list(notifications))
+    notifs = Notification.objects.filter(pet_id=int(pid)) #.values('id', 'pet_id', 'user_id', 'notif_type', 'description', 'repeat', 'notif_date')
+    notifications = []
+
+    for notification in notifs:
+        notif = {'id': notification.id, 'pet_id': notification.pet_id, 'user_id': notification.user_id,
+                'description': '' if notification.description is None else notification.description, 
+                'repeat': notification.repeat, 'notif_date': notification.notif_date}
+
+        notifications.append(notif)
+
+    cache.set(f'notif_list_{pid}', notifications)
     
-    return JsonResponse({'notifications': list(notifications)})
+    return JsonResponse({'notifications': notifications})
