@@ -61,7 +61,8 @@ def create_notification(request):
                                                 description=form.cleaned_data['description'],
                                                 repeat=form.cleaned_data['repeat'])
         
-        notif = {'id': notification.id, 'pet_id': notification.pet_id, 'user_id': notification.user_id,
+        notif = {'id': notification.id, 'pet_id': notification.pet_id, 
+                'user_id': notification.user_id, 'notif_type': notification.notif_type,
                 'description': '' if notification.description is None else notification.description,
                 'repeat': notification.repeat, 'notif_date': notification.notif_date}
 
@@ -118,7 +119,8 @@ def update_notification(request):
                 
         notification.save()
 
-        notif = {'id': notification.id, 'pet_id': notification.pet_id, 'user_id': notification.user_id,
+        notif = {'id': notification.id, 'pet_id': notification.pet_id, 
+                'user_id': notification.user_id, 'notif_type': notification.notif_type,
                 'description': '' if notification.description is None else notification.description, 
                 'repeat': notification.repeat, 'notif_date': notification.notif_date}
 
@@ -209,7 +211,8 @@ def notifications_list(request):
     notifications = []
 
     for notification in notifs:
-        notif = {'id': notification.id, 'pet_id': notification.pet_id, 'user_id': notification.user_id,
+        notif = {'id': notification.id, 'pet_id': notification.pet_id, 
+                'user_id': notification.user_id, 'notif_type': notification.notif_type,
                 'description': '' if notification.description is None else notification.description, 
                 'repeat': notification.repeat, 'notif_date': notification.notif_date}
 

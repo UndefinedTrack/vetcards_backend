@@ -60,7 +60,8 @@ def create_pet(request):
         pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
               'species': pet.species, 'breed': pet.breed, 'color': pet.color,
               'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'sterilized': pet.sterilized,
-              'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 'notes': pet.notes, 'weight': pet.weight,}
+              'vaccinated': pet.vaccinated, 'contraindications': '' if pet.contraindications is None else pet.contraindications, 
+              'notes': '' if pet.notes is None else pet.notes, 'weight': pet.weight,}
 
         # uid = pet.user.id
 
@@ -120,7 +121,8 @@ def update_pet_info(request):
         pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
               'species': pet.species, 'breed': pet.breed, 'color': pet.color, 
               'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'sterilized': pet.sterilized,
-              'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 'notes': pet.notes, 'weight': pet.weight,'avatar': avatar}
+              'vaccinated': pet.vaccinated, 'contraindications': '' if pet.contraindications is None else pet.contraindications, 
+              'notes': '' if pet.notes is None else pet.notes, 'weight': pet.weight,'avatar': avatar}
 
         pets = cache.get(f'pets_list_{uid}')
 
@@ -214,8 +216,9 @@ def pets_list(request):
         pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
               'species': pet.species, 'breed': pet.breed, 'color': pet.color, 
               'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 
-              'sterilized': pet.sterilized, 'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 
-              'notes': pet.notes, 'weight': pet.weight, 'avatar': avatar}
+              'sterilized': pet.sterilized, 'vaccinated': pet.vaccinated, 
+              'contraindications': '' if pet.contraindications is None else pet.contraindications, 
+              'notes': '' if pet.notes is None else pet.notes, 'weight': pet.weight, 'avatar': avatar}
 
         pts.append(pt)
 
@@ -275,7 +278,8 @@ def patients_list(request):
         
         pat = {'patient': f'{pet.name}, {pet.species}', 'color': pet.color, 'birth_date': pet.birth_date, 
                'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id, 'sterilized': pet.sterilized,
-               'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 'notes': pet.notes, 'weight': pet.weight, 'avatar': avatar}
+               'vaccinated': pet.vaccinated, 'contraindications': '' if pet.contraindications is None else pet.contraindications, 
+               'notes': '' if pet.notes is None else pet.notes, 'weight': pet.weight, 'avatar': avatar}
         patients.append(pat)
 
     cache.set('patients', patients)
@@ -315,7 +319,8 @@ def pet_info(request):
     
     pt = {'id': pet.id, 'name': pet.name, 'species': pet.species, 'breed': pet.breed, 'color': pet.color,
           'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'sterilized': pet.sterilized,
-          'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 'notes': pet.notes, 'weight': pet.weight, 'avatar': avatar}
+          'vaccinated': pet.vaccinated, 'contraindications': '' if pet.contraindications is None else pet.contraindications, 
+          'notes': '' if pet.notes is None else pet.notes, 'weight': pet.weight, 'avatar': avatar}
     
     return JsonResponse({'pet': pt})
 
@@ -473,8 +478,9 @@ def search(request):
         avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
         
         pat = {'patient': f"{pet.name}, {pet.species}", 'color': pet.color, 'birth_date': pet.birth_date, 
-        'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id, 'sterilized': pet.sterilized,
-        'vaccinated': pet.vaccinated, 'contraindications': pet.contraindications, 'notes': pet.notes, 'weight': pet.weight, 'avatar': avatar}
+               'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id, 'sterilized': pet.sterilized,
+               'vaccinated': pet.vaccinated, 'contraindications': '' if pet.contraindications is None else pet.contraindications, 
+               'notes': '' if pet.notes is None else pet.notes, 'weight': pet.weight, 'avatar': avatar}
         patients.append(pat)
 
     

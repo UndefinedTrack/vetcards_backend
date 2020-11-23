@@ -52,20 +52,23 @@ def create_vet_procedure(request):
         if not user.vet:
             return JsonResponse({"errors": "you aren't a veterinar"})
 
-        procedure = Procedure.objects.create(pet_id=form.cleaned_data['pet'].id,
-                                             user_id=uid,
-                                             purpose=form.cleaned_data['purpose'],
-                                             name=form.cleaned_data['name'],
-                                             symptoms=form.cleaned_data['symptoms'],
-                                             diagnosis=form.cleaned_data['diagnosis'],
-                                             recomms=form.cleaned_data['recomms'],
-                                             recipe=form.cleaned_data['recipe'],
-                                             proc_date=form.cleaned_data['proc_date'])
+        proc = Procedure.objects.create(pet_id=form.cleaned_data['pet'].id,
+                                        user_id=uid,
+                                        purpose=form.cleaned_data['purpose'],
+                                        name=form.cleaned_data['name'],
+                                        symptoms=form.cleaned_data['symptoms'],
+                                        diagnosis=form.cleaned_data['diagnosis'],
+                                        recomms=form.cleaned_data['recomms'],
+                                        recipe=form.cleaned_data['recipe'],
+                                        proc_date=form.cleaned_data['proc_date'])
         
-        proc = {'id': procedure.id, 'pet_id': procedure.pet_id, 'user_id': procedure.user_id,
-                'purpose': procedure.purpose, 'name': procedure.name, 'symptoms': procedure.symptoms,
-                'diagnosis': procedure.diagnosis, 'recomms': procedure.recomms,
-                'recipe': procedure.recipe, 'proc_date': procedure.proc_date}
+        procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
+                'purpose': proc.purpose, 'name': proc.name,
+                'symptoms': '' if proc.symptoms is None else proc.symptoms,
+                'diagnosis': '' if proc.diagnosis is None else proc.diagnosis, 
+                'recomms': '' if proc.recomms is None else proc.recomms,
+                'recipe': '' if proc.recipe is None else proc.recipe, 
+                'proc_date': proc.proc_date,}
 
         pid = int(form.cleaned_data['pet'].id)
 
@@ -73,7 +76,7 @@ def create_vet_procedure(request):
         if procs:
             cache.delete(f'vet_procs_{pid}')
         
-        return JsonResponse({"procedure": proc})
+        return JsonResponse({"procedure": procedure})
         
     return JsonResponse({"errors": form.errors})
 
@@ -120,7 +123,8 @@ def create_owner_procedure(request):
                                                   proc_date=form.cleaned_data['proc_date'])
         
         proc = {'id': procedure.id, 'pet_id': procedure.pet_id, 'user_id': procedure.user_id,
-                'name': procedure.name, 'description': procedure.description, 'proc_date': procedure.proc_date}
+                'name': procedure.name, 'description': '' if procedure.description is None else procedure.description, 
+                'proc_date': procedure.proc_date}
 
         pid = int(form.cleaned_data['pet'].id)
         procs = cache.get(f'owner_procs_{pid}')
@@ -185,9 +189,12 @@ def vet_procs_list(request):
             proc_atts.append(att.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/'))
 
         procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
-                'purpose': proc.purpose, 'name': proc.name, 'symptoms': proc.symptoms,
-                'diagnosis': proc.diagnosis, 'recomms': proc.recomms,
-                'recipe': proc.recipe, 'proc_date': proc.proc_date, 'attachments': proc_atts}
+                    'purpose': proc.purpose, 'name': proc.name,
+                    'symptoms': '' if proc.symptoms is None else proc.symptoms,
+                    'diagnosis': '' if proc.diagnosis is None else proc.diagnosis, 
+                    'recomms': '' if proc.recomms is None else proc.recomms,
+                    'recipe': '' if proc.recipe is None else proc.recipe, 
+                    'proc_date': proc.proc_date, 'attachments': proc_atts}
 
         procedures.append(procedure)
 
@@ -244,10 +251,9 @@ def owner_procs_list(request):
         for att in atts:
             proc_atts.append(att.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/'))
 
-        procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
-                'purpose': proc.purpose, 'symptoms': proc.symptoms,
-                'diagnosis': proc.diagnosis, 'recomms': proc.recomms,
-                'recipe': proc.recipe, 'proc_date': proc.proc_date, 'attachments': proc_atts}
+        procedure = {'id': procedure.id, 'pet_id': procedure.pet_id, 'user_id': procedure.user_id,
+                'name': procedure.name, 'description': '' if procedure.description is None else procedure.description, 
+                'proc_date': procedure.proc_date, 'attachments': proc_atts}
 
         procedures.append(procedure)
     
@@ -316,7 +322,24 @@ def search_owner_procs(request):
     else:
         owner_procs = OwnerProcedureDocument.search().filter("term", pet_id=pid).query(Q('wildcard', name='*' + name + '*') | Q('match', name=name))
     
-    procedures = owner_procs.to_queryset().values('id', 'pet_id', 'user_id', 'name', 'description', 'proc_date')
+    procs = owner_procs.to_queryset() #.values('id', 'pet_id', 'user_id', 'name', 'description', 'proc_date')
+
+    procedures = []
+
+    for proc in procs:
+        
+        atts = OwnerAttachment.objects.filter(proc_id=proc.id)
+
+        proc_atts = []
+
+        for att in atts:
+            proc_atts.append(att.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/'))
+
+        procedure = {'id': procedure.id, 'pet_id': procedure.pet_id, 'user_id': procedure.user_id,
+                'name': procedure.name, 'description': '' if procedure.description is None else procedure.description, 
+                'proc_date': procedure.proc_date, 'attachments': proc_atts}
+
+        procedures.append(procedure)
     
     return JsonResponse({'procedures': list(procedures)})
 
@@ -380,8 +403,30 @@ def search_vet_procs(request):
                                                                                    Q('match', name=name))
     else:
         vet_procs = VetProcedureDocument.search().filter("term", pet_id=pid).query(Q('wildcard', purpose='*' + name + '*') | Q('match', name=name))
-    procedures = vet_procs.to_queryset().values('id', 'pet_id', 'user_id', 'purpose', 'name', 'symptoms', 
-                                                  'diagnosis', 'recomms', 'recipe', 'proc_date') 
+
+    procedures = []
+    procs = vet_procs.to_queryset()#.values('id', 'pet_id', 'user_id', 'purpose', 'name', 'symptoms', 
+    #                                              'diagnosis', 'recomms', 'recipe', 'proc_date') 
+
+    for proc in procs:
+    
+        atts = VetAttachment.objects.filter(proc_id=proc.id)
+
+        proc_atts = []
+
+        for att in atts:
+            proc_atts.append(att.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/'))
+
+        procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
+                'purpose': proc.purpose, 'name': proc.name,
+                'symptoms': '' if proc.symptoms is None else proc.symptoms,
+                'diagnosis': '' if proc.diagnosis is None else proc.diagnosis, 
+                'recomms': '' if proc.recomms is None else proc.recomms,
+                'recipe': '' if proc.recipe is None else proc.recipe, 
+                'proc_date': proc.proc_date, 'attachments': proc_atts}
+
+        procedures.append(procedure)
+    
     
     return JsonResponse({'procedures': list(procedures)})
 
@@ -513,7 +558,8 @@ def update_owner_procedure(request):
             proc_atts.append(att.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/'))
 
         procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
-                'name': proc.name, 'description': proc.description, 'proc_date': proc.proc_date, 'attachments': proc_atts}
+                'name': proc.name, 'description': '' if proc.description is None else proc.description, 
+                'proc_date': proc.proc_date, 'attachments': proc_atts}
 
         procs = cache.get(f'owner_procs_{proc.pet.id}')
         if procs:
@@ -575,9 +621,12 @@ def update_vet_procedure(request):
             proc_atts.append(att.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/'))
 
         procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
-                'purpose': proc.purpose, 'name': proc.name,'symptoms': proc.symptoms,
-                'diagnosis': proc.diagnosis, 'recomms': proc.recomms,
-                'recipe': proc.recipe, 'proc_date': proc.proc_date, 'attachments': proc_atts}
+                'purpose': proc.purpose, 'name': proc.name,
+                'symptoms': '' if proc.symptoms is None else proc.symptoms,
+                'diagnosis': '' if proc.diagnosis is None else proc.diagnosis, 
+                'recomms': '' if proc.recomms is None else proc.recomms,
+                'recipe': '' if proc.recipe is None else proc.recipe, 
+                'proc_date': proc.proc_date, 'attachments': proc_atts}
 
         procs = cache.get(f'vet_procs_{proc.pet.id}')
         if procs:
