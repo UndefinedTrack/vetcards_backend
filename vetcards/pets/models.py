@@ -19,7 +19,7 @@ class Pet(models.Model):
     vaccinated = models.BooleanField(default=False, verbose_name='Привит(а)')
     contraindications = models.TextField(max_length=512, null=True, blank=True, verbose_name='Противопоказания')
     notes = models.TextField(max_length=512, null=True, blank=True, verbose_name='Особые пометки')
-    weight = models.FloatField(default=0, blank=True, verbose_name='Вес')
+    weight = models.FloatField(default=0, null=True, blank=True, verbose_name='Вес')
     avatar = models.ImageField(upload_to=avatar_directory_path, null=True, blank=True, verbose_name='Фотография')
     #avatar = models.ImageField(upload_to='pavatars/', null=True, blank=True, verbose_name='Фотография')
     

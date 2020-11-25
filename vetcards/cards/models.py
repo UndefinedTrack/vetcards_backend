@@ -6,7 +6,7 @@ class Procedure(models.Model):
     pet = models.ForeignKey(to='pets.Pet', on_delete=models.CASCADE, verbose_name='Питомец')
     user = models.ForeignKey(to='users.User', on_delete=models.CASCADE, verbose_name='Ветеринар')
     purpose = models.TextField(max_length=128, null=True, verbose_name='Цель')
-    name = models.TextField(max_length=128, null=True, verbose_name='Название')
+    name = models.TextField(max_length=128, null=True, blank=True, verbose_name='Название')
     symptoms = models.TextField(max_length=256, null=True, blank=True, verbose_name='Симптомы')
     diagnosis = models.TextField(max_length=256, null=True, blank=True, verbose_name='Диагноз')
     recomms = models.TextField(max_length=256, null=True, blank=True, verbose_name='Рекомендации')

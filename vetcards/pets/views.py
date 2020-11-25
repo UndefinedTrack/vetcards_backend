@@ -222,9 +222,11 @@ def pets_list(request):
 
         pts.append(pt)
 
+    # pts.reverse()
+
     cache.set(f'pets_list_{uid}', pts)
     
-    return JsonResponse({'pets': list(pts)})
+    return JsonResponse({'pets': pts})
 
 @require_GET
 def patients_list(request):
@@ -410,7 +412,7 @@ def protected_file(request):
         response['X-Accel-Expires'] = request.GET['Expires']
     
     response['Content-type'] = ''
-    response['Access-Control-Allow-Origin'] = 'http://localhost:3000' #https://undefinedtrack.github.io'
+    response['Access-Control-Allow-Origin'] = 'https://undefinedtrack.github.io'
     response['Access-Control-Allow-Credentials'] = 'true'
     response['Access-Control-Allow-Methods'] = 'GET' # , POST, PUT, DELETE, OPTIONS'
     response['Access-Control-Allow-Headers'] =  'Accept,Authorization,Cache-Control,Content-Type,DNT,If-Modified-Since,Keep-Alive,Origin,User-Agent,X-Requested-With'
@@ -458,6 +460,9 @@ def search(request):
                                       Q('wildcard', user__first_name='*' + str(request.GET['name']) + '*') |
                                       Q('wildcard', user__last_name='*' + str(request.GET['name']) + '*') |
                                       Q('wildcard', user__patroymic='*' + str(request.GET['name']) + '*'))
+
+    total = pets.count()
+    pets = pets[:total]
     pets = pets.to_queryset()
     
     patients = []

@@ -251,9 +251,9 @@ def owner_procs_list(request):
         for att in atts:
             proc_atts.append(att.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/'))
 
-        procedure = {'id': procedure.id, 'pet_id': procedure.pet_id, 'user_id': procedure.user_id,
-                'name': procedure.name, 'description': '' if procedure.description is None else procedure.description, 
-                'proc_date': procedure.proc_date, 'attachments': proc_atts}
+        procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
+                     'name': proc.name, 'description': '' if proc.description is None else proc.description,
+                     'proc_date': proc.proc_date, 'attachments': proc_atts}
 
         procedures.append(procedure)
     
@@ -321,6 +321,9 @@ def search_owner_procs(request):
                                                                                        Q('match', name=name))
     else:
         owner_procs = OwnerProcedureDocument.search().filter("term", pet_id=pid).query(Q('wildcard', name='*' + name + '*') | Q('match', name=name))
+
+    total = owner_procs.count()
+    owner_procs = owner_procs[:total]
     
     procs = owner_procs.to_queryset() #.values('id', 'pet_id', 'user_id', 'name', 'description', 'proc_date')
 
@@ -335,9 +338,9 @@ def search_owner_procs(request):
         for att in atts:
             proc_atts.append(att.url.url.replace('http://hb.bizmrg.com/undefined/',  '/cards/attachments/'))
 
-        procedure = {'id': procedure.id, 'pet_id': procedure.pet_id, 'user_id': procedure.user_id,
-                'name': procedure.name, 'description': '' if procedure.description is None else procedure.description, 
-                'proc_date': procedure.proc_date, 'attachments': proc_atts}
+        procedure = {'id': proc.id, 'pet_id': proc.pet_id, 'user_id': proc.user_id,
+                     'name': proc.name, 'description': '' if proc.description is None else proc.description, 
+                     'proc_date': proc.proc_date, 'attachments': proc_atts}
 
         procedures.append(procedure)
     
@@ -403,6 +406,9 @@ def search_vet_procs(request):
                                                                                    Q('match', name=name))
     else:
         vet_procs = VetProcedureDocument.search().filter("term", pet_id=pid).query(Q('wildcard', purpose='*' + name + '*') | Q('match', name=name))
+
+    total = vet_procs.count()
+    vet_procs = vet_procs[:total]
 
     procedures = []
     procs = vet_procs.to_queryset()#.values('id', 'pet_id', 'user_id', 'purpose', 'name', 'symptoms', 
@@ -769,7 +775,7 @@ def protected_file(request):
         response['X-Accel-Expires'] = request.GET['Expires']
     
     response['Content-type'] = ''
-    response['Access-Control-Allow-Origin'] = 'http://localhost:3000' #https://undefinedtrack.github.io'
+    response['Access-Control-Allow-Origin'] = 'https://undefinedtrack.github.io'
     response['Access-Control-Allow-Credentials'] = 'true'
     response['Access-Control-Allow-Methods'] = 'GET' # , POST, PUT, DELETE, OPTIONS'
     response['Access-Control-Allow-Headers'] =  'Accept,Authorization,Cache-Control,Content-Type,DNT,If-Modified-Since,Keep-Alive,Origin,User-Agent,X-Requested-With'
