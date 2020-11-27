@@ -254,6 +254,8 @@ def broadcast(request):
 
             broadcast_notif.delay(address, form.cleaned_data["subject"], form.cleaned_data["message"])
 
+            return JsonResponse({"status": "ok"})
+
         return JsonResponse({"error": "You aren't a veterinar"})
             
     return JsonResponse({"errors": form.errors})
