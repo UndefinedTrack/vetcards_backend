@@ -107,7 +107,9 @@ def update_user_info(request):
         usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
                'patronymic': '' if user.patronymic is None else user.patronymic, 'last_name': user.last_name,
                'phone': '' if user.phone is None else user.phone, 'email': user.email,
-               'avatar': avatar, 'address': '' if user.address is None else user.address, 
+               'avatar': avatar, 'region': '' if user.region is None else user.region, 
+               'city': '' if user.city is None else user.city, 'street': '' if user.street is None else user.street, 
+               'address': '' if user.address is None else user.address, 
                'passport': '' if user.passport is None else user.passport,
                'vet': user.vet, 'paid_service': user.paid_service, 'super_vet': user.super_vet}
         
@@ -150,7 +152,9 @@ def get_user_info(request):
     usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
            'patronymic': '' if user.patronymic is None else user.patronymic, 'last_name': user.last_name,
            'phone': '' if user.phone is None else user.phone, 'email': user.email, 
-           'avatar': avatar, 'address': '' if user.address is None else user.address, 
+           'avatar': avatar, 'region': '' if user.region is None else user.region, 
+           'city': '' if user.city is None else user.city, 'street': '' if user.street is None else user.street, 
+           'address': '' if user.address is None else user.address, 
            'passport': '' if user.passport is None else user.passport,
            'vet': user.vet, 'paid_service': user.paid_service, 'super_vet': user.super_vet}
     

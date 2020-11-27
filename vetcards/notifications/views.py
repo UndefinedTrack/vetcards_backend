@@ -11,7 +11,9 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 
-from .forms import NotificationForm, UpdateNotificationForm
+from .forms import NotificationForm, UpdateNotificationForm, BroadcastNotificationForm
+
+from .tasks import broadcast_notif
 
 # Create your views here.
 
@@ -221,3 +223,37 @@ def notifications_list(request):
     cache.set(f'notif_list_{pid}', notifications)
     
     return JsonResponse({'notifications': notifications})
+
+@csrf_exempt
+@require_POST
+def broadcast(request):
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
+    form = BroadcastNotificationForm(request.POST)
+
+    if form.is_valid():
+
+        if user.vet:
+            address = {
+                "region": form.cleaned_data["region"], 
+                "city": form.cleaned_data["city"], 
+                "street": form.cleaned_data["street"]
+            }
+
+            broadcast_notif.delay(address, form.cleaned_data["subject"], form.cleaned_data["message"])
+
+        return JsonResponse({"error": "You aren't a veterinar"})
+            
+    return JsonResponse({"errors": form.errors})
