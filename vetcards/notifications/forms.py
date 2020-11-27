@@ -13,7 +13,7 @@ class UpdateNotificationForm(forms.ModelForm):
         model = Notification
         fields = ['notif_type', 'description', 'repeat']
 
-class BroadcastNotificationForm(forms.ModelForm):
+class BroadcastNotificationForm(forms.Form):
 
     region = forms.CharField(max_length=128)
     city = forms.CharField(max_length=128)
