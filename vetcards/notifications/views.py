@@ -11,9 +11,9 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.views.decorators.cache import cache_page
 from django.core.cache import cache
 
-from .forms import NotificationForm, UpdateNotificationForm, BroadcastNotificationForm
+from .forms import NotificationForm, UpdateNotificationForm, BroadcastNotificationForm, ContactForm
 
-from .tasks import broadcast_notif
+from .tasks import broadcast_notif, contact_notif
 
 # Create your views here.
 
@@ -258,4 +258,17 @@ def broadcast(request):
 
         return JsonResponse({"error": "You aren't a veterinar"})
             
+    return JsonResponse({"errors": form.errors})
+
+@csrf_exempt
+@require_POST
+def contact(request):
+
+    form = ContactForm(request.POST)
+
+    if form.is_valid():
+        contact_notif.delay(form.cleaned_data['first_name'], form.cleaned_data['last_name'], form.cleaned_data['email'])
+
+        return JsonResponse({"status": "ok"})
+
     return JsonResponse({"errors": form.errors})

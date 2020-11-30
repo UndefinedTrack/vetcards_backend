@@ -21,3 +21,8 @@ class BroadcastNotificationForm(forms.Form):
 
     subject = forms.CharField(max_length=128)
     message = forms.CharField(max_length=512)
+
+class ContactForm(forms.Form):
+    last_name = forms.CharField(max_length=128)
+    first_name = forms.CharField(max_length=128)
+    email = forms.CharField(max_length=128)

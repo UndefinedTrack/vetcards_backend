@@ -152,3 +152,24 @@ def broadcast_notif(address, subject, message):
 
     except Exception as exc:
         print(str(exc))
+
+@app.task()
+def contact_notif(first_name, last_name, email):
+
+    gmail_login = 'undefined.track@gmail.com'
+    gmail_password = 'elnylnlttmxavzwm'
+    sent_from = gmail_login
+
+
+    try:
+        server_ssl = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server_ssl.ehlo()
+        server_ssl.login(gmail_login, gmail_password)
+
+        body_temp = f'{first_name} {last_name}\n просит вас связаться с ней по поводу использваония сервиса в её ветеринарной клинике или ветеринарном кабинете. Связаться можно, отправив письмо по адресу {email} .'
+
+        email_text = f'From: {sent_from}\nTo: {sent_from}\nSubject: Использование сервиса\n\n{body_temp}'.encode('utf-8')
+        server_ssl.sendmail(sent_from, sent_from, email_text)
+
+    except Exception as exc:
+        print(str(exc))
