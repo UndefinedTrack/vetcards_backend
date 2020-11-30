@@ -14,7 +14,8 @@ class PetUpdateForm(forms.ModelForm):
     class Meta:
         model = Pet
         fields = ['user', 'name', 'species', 'breed', 'color', 'birth_date',
-                   'gender', 'chip']
+                  'gender', 'chip', 'sterilized', 'vaccinated', 'contraindications', 
+                  'notes', 'weight']
         
 
 class PetAvatarForm(forms.Form):

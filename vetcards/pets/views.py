@@ -6,9 +6,15 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
+
 from .forms import PetForm, PetUpdateForm, PetAvatarForm
 from .documents import PetDocument
 
+from elasticsearch_dsl.query import Q
 # Create your views here.
 
 @csrf_exempt
@@ -18,11 +24,31 @@ def create_pet(request):
     '''Создание питомца'''
 
     Pet = apps.get_model('pets.Pet')
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
     
     form = PetForm(request.POST)
     
     if form.is_valid():
-        pet = Pet.objects.create(user_id=form.cleaned_data['user'].id, 
+
+        if user.vet and uid != int(form.cleaned_data['user'].id):
+            uid = int(form.cleaned_data['user'].id)
+        elif not user.vet and uid != int(form.cleaned_data['user'].id):
+            return JsonResponse({"errors": "Your id doesn't match the specified"})
+
+        pet = Pet.objects.create(user_id=uid, 
                                  name=form.cleaned_data['name'], 
                                  species=form.cleaned_data['species'],
                                  breed=form.cleaned_data['breed'],  
@@ -33,7 +59,16 @@ def create_pet(request):
         
         pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
               'species': pet.species, 'breed': pet.breed, 'color': pet.color,
-              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip}
+              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'sterilized': pet.sterilized,
+              'vaccinated': pet.vaccinated, 'contraindications': '' if pet.contraindications is None else pet.contraindications, 
+              'notes': '' if pet.notes is None else pet.notes, 'weight': pet.weight,}
+
+        # uid = pet.user.id
+
+        pets = cache.get(f'pets_list_{uid}')
+
+        if pets:
+            cache.delete(f'pets_list_{uid}')
         
         return JsonResponse({"pet": pt})
         
@@ -49,16 +84,30 @@ def update_pet_info(request):
     User = apps.get_model('users.User')
     
     form = PetUpdateForm(request.POST)
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
     
     if form.is_valid():
         
         pet = Pet.objects.filter(id=form.cleaned_data['pk']).first()
-        user = User.objects.filter(id=form.cleaned_data['user'].id).first()
+        # user = User.objects.filter(id=form.cleaned_data['user'].id).first()
         
         if pet == None:
             return JsonResponse({"errors": "Pet not found"})
 
-        if pet.user.id != form.cleaned_data['user'].id and not user.vet:
+        if pet.user.id != user.id and not user.vet:
             return JsonResponse({"error": "You aren't veterinar or owner of the pet"})
         
         for k in form.cleaned_data.keys():
@@ -67,9 +116,22 @@ def update_pet_info(request):
                 
         pet.save()
 
+        avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
+
         pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
               'species': pet.species, 'breed': pet.breed, 'color': pet.color, 
-              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip}
+              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'sterilized': pet.sterilized,
+              'vaccinated': pet.vaccinated, 'contraindications': '' if pet.contraindications is None else pet.contraindications, 
+              'notes': '' if pet.notes is None else pet.notes, 'weight': pet.weight,'avatar': avatar}
+
+        pets = cache.get(f'pets_list_{uid}')
+
+        if pets:
+            cache.delete(f'pets_list_{uid}')
+
+        patients = cache.get('patients')
+        if patients:
+            cache.delete('patients')
         
         return JsonResponse({"pet": pt})
             
@@ -84,13 +146,35 @@ def delete_pet(request):
     
     Pet = apps.get_model('pets.Pet')
     
-    uid = int(request.POST['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
     pid = int(request.POST['pid'])
     
     pet = Pet.objects.filter(id=int(pid)).first()
     
-    if pet.user.id == uid:
+    if pet.user.id == uid or user.vet:
         pet.delete()
+
+        pets = cache.get(f'pets_list_{uid}')
+
+        if pets:
+            cache.delete(f'pets_list_{uid}')
+
+        patients = cache.get('patients')
+        if patients:
+            cache.delete('patients')
         
         return JsonResponse({"status": "ok"})
     
@@ -99,15 +183,50 @@ def delete_pet(request):
 @require_GET
 def pets_list(request):
 
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
+    pts = cache.get(f'pets_list_{uid}')
+
+    if pts:
+        return JsonResponse({'pets': pts})
+
     '''Выдает список питомцев'''
 
     Pet = apps.get_model('pets.Pet')
     
-    pets = Pet.objects.filter(user_id=int(request.GET['uid'])).values('id', 'user_id', 'name', 
-                                                       'species', 'breed', 'color', 'birth_date',
-                                                       'gender', 'chip')
+    pets = Pet.objects.filter(user_id=uid) # request.GET['uid']))
+
+    pts = []
+    for pet in pets:
+
+        avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
+
+        pt = {'id': pet.id, 'user_id': pet.user.id, 'name': pet.name,
+              'species': pet.species, 'breed': pet.breed, 'color': pet.color, 
+              'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 
+              'sterilized': pet.sterilized, 'vaccinated': pet.vaccinated, 
+              'contraindications': '' if pet.contraindications is None else pet.contraindications, 
+              'notes': '' if pet.notes is None else pet.notes, 'weight': pet.weight, 'avatar': avatar}
+
+        pts.append(pt)
+
+    # pts.reverse()
+
+    cache.set(f'pets_list_{uid}', pts)
     
-    return JsonResponse({'pets': list(pets)})
+    return JsonResponse({'pets': pts})
 
 @require_GET
 def patients_list(request):
@@ -117,12 +236,29 @@ def patients_list(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
 
-    uid = int(request.GET['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
 
-    user = User.objects.filter(id=uid).first()
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
+    # user = User.objects.filter(id=uid).first()
 
     if not user.vet:
         return JsonResponse({"error": "You aren't veterinar"})
+
+    patients = cache.get('patients')
+
+    if patients:
+        return JsonResponse({'patients': patients})
 
     pets = Pet.objects.all()
 
@@ -139,9 +275,16 @@ def patients_list(request):
 
         if name == '':
             owner = f'{pet.user.last_name}'
+
+        avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
         
-        pat = {'patient': f'{pet.name}, {pet.species}', 'color': pet.color, 'bitrh_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id}
+        pat = {'patient': f'{pet.name}, {pet.species}', 'color': pet.color, 'birth_date': pet.birth_date, 
+               'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'owner_id': pet.user.id, 'card': pet.id, 'sterilized': pet.sterilized,
+               'vaccinated': pet.vaccinated, 'contraindications': '' if pet.contraindications is None else pet.contraindications, 
+               'notes': '' if pet.notes is None else pet.notes, 'weight': pet.weight, 'avatar': avatar}
         patients.append(pat)
+
+    cache.set('patients', patients)
 
     return JsonResponse({'patients': list(patients)})
 
@@ -153,17 +296,33 @@ def pet_info(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
 
-    uid = int(request.GET['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
     pid = int(request.GET['pid'])
     
     pet = Pet.objects.filter(id=pid).first()
-    user = User.objects.filter(id=uid).first()
+    # user = User.objects.filter(id=uid).first()
     
     if pet.user.id != uid and not user.vet:
         return JsonResponse({"error": "You aren't veterinar or owner of the pet"})
+
+    avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
     
     pt = {'id': pet.id, 'name': pet.name, 'species': pet.species, 'breed': pet.breed, 'color': pet.color,
-          'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip}
+          'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'sterilized': pet.sterilized,
+          'vaccinated': pet.vaccinated, 'contraindications': '' if pet.contraindications is None else pet.contraindications, 
+          'notes': '' if pet.notes is None else pet.notes, 'weight': pet.weight, 'avatar': avatar}
     
     return JsonResponse({'pet': pt})
 
@@ -176,6 +335,20 @@ def upload_pet_avatar(request):
     User = apps.get_model('users.User')
     
     form = PetAvatarForm(request.POST, request.FILES)
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
     
     if form.is_valid():
         
@@ -193,6 +366,17 @@ def upload_pet_avatar(request):
         pet_avatar = {'id': pet.id, 
                       'user': pet.user.id,
                       'avatar': pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/')}
+
+        # uid = pet.user.id
+
+        pets = cache.get(f'pets_list_{uid}')
+
+        if pets:
+            cache.delete(f'pets_list_{uid}')
+
+        patients = cache.get('patients')
+        if patients:
+            cache.delete('patients')
         
         return JsonResponse({'pet_avatar': pet_avatar})
     
@@ -203,19 +387,38 @@ def upload_pet_avatar(request):
 @csrf_exempt
 @require_GET
 def protected_file(request):
-    if request.user.is_authenticated:
-        url = request.path.replace('/pets/avatars', '/protected')
-        print(url)
-        response = HttpResponse(status=200)
-        response['X-Accel-Redirect'] = url
-        print(response.has_header('X-Accel-Redirect'))
-        
-        if 'Expires' in request.GET.keys():
-            response['X-Accel-Expires'] = request.GET['Expires']
-        response['Content-type'] = ''
-        return response
-    else:
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
         return HttpResponse('<h1>File not found</h1>', status=404)
+        
+    uid = auth[0].id
+    user = auth[0]
+
+    url = request.path.replace('/pets/avatars', '/s3_files')
+    print(url)
+    response = HttpResponse(status=200)
+    response['X-Accel-Redirect'] = url
+    print(response.has_header('X-Accel-Redirect'))
+    
+    if 'Expires' in request.GET.keys():
+        response['X-Accel-Expires'] = request.GET['Expires']
+    
+    response['Content-type'] = ''
+    response['Access-Control-Allow-Origin'] = 'https://undefinedtrack.github.io'
+    response['Access-Control-Allow-Credentials'] = 'true'
+    response['Access-Control-Allow-Methods'] = 'GET' # , POST, PUT, DELETE, OPTIONS'
+    response['Access-Control-Allow-Headers'] =  'Accept,Authorization,Cache-Control,Content-Type,DNT,If-Modified-Since,Keep-Alive,Origin,User-Agent,X-Requested-With'
+    
+    return response
+        
 
 @require_GET
 def search(request):
@@ -223,20 +426,49 @@ def search(request):
     Pet = apps.get_model('pets.Pet')
     User = apps.get_model('users.User')
 
-    uid = int(request.GET['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
 
-    user = User.objects.filter(id=uid).first()
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    user = auth[0]
+
+    # user = User.objects.filter(id=uid).first()
+    name = request.GET['name']
 
     if not user.vet:
         return JsonResponse({"error": "You aren't veterinar"})
+
+    if name == '':
+        patients = cache.get('patients')
+
+        if patients:
+            return JsonResponse({'patients': patients})
+    else:
+        patients = cache.get(f'patients_{name}')
+        if patients:
+            return JsonResponse({'patients': patients})
     
-    pets = PetDocument.search().query('wildcard', name='*' + str(request.GET['name']) + '*')[:10]
-    pets = pets.to_queryset().values('id', 'user_id', 'name', 'species', 'breed', 
-                  'color', 'birth_date', 'gender', 'chip')
+    pets = PetDocument.search().query(Q('wildcard', name='*' + str(request.GET['name']) + '*') | 
+                                      Q('wildcard', user__first_name='*' + str(request.GET['name']) + '*') |
+                                      Q('wildcard', user__last_name='*' + str(request.GET['name']) + '*') |
+                                      Q('wildcard', user__patroymic='*' + str(request.GET['name']) + '*'))
+
+    total = pets.count()
+    pets = pets[:total]
+    pets = pets.to_queryset()
     
     patients = []
     
     for pet in pets:
+
         patr = pet.user.patronymic[0] if pet.user.patronymic != '' else ''
         name = pet.user.first_name[0] if pet.user.first_name != '' else ''
 
@@ -247,8 +479,21 @@ def search(request):
 
         if name == '':
             owner = f'{pet.user.last_name}'
+
+        avatar = pet.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/pets/avatars/') if pet.avatar else ''
         
-        pat = {'patient': f'{pet.name}, {pet.species}', 'color': pet.color, 'birth_date': pet.birth_date, 'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'card': pet.id}
+        pat = {'patient': f"{pet.name}, {pet.species}", 'color': pet.color, 'birth_date': pet.birth_date, 
+               'gender': pet.gender, 'chip': pet.chip, 'owner': owner, 'owner_id': pet.user.id, 'card': pet.id, 'sterilized': pet.sterilized,
+               'vaccinated': pet.vaccinated, 'contraindications': '' if pet.contraindications is None else pet.contraindications, 
+               'notes': '' if pet.notes is None else pet.notes, 'weight': pet.weight, 'avatar': avatar}
         patients.append(pat)
+
     
-    return JsonResponse({'patients': list(patients)})
+    unique_patients = list({p['card']:p for p in patients}.values())
+
+    if name == '':
+        cache.set('patients', unique_patients)
+    else:
+        cache.set(f'patients_{name}', unique_patients)
+    
+    return JsonResponse({'patients': unique_patients})

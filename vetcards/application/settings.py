@@ -13,6 +13,8 @@ import os
 from pathlib import Path
 from celery.schedules import crontab
 
+from datetime import timedelta
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,7 +30,8 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') # heroku fix
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['vetcards.herokuapp.com', 'alexander-goryakin.droidroot1995.tk', 'undefinedtrack.github.io/vetcards_frontend/#/', 'localhost:8000', 'localhost']
+ALLOWED_HOSTS = ['vetcards.herokuapp.com', 'alexander-goryakin.droidroot1995.tk', 
+'https://undefinedtrack.github.io/vetcards_frontend/#/', 'localhost:8000', 'localhost', 'localhost:3000', 'https://undefinedtrack.github.io']
 
 
 # Application definition
@@ -47,6 +50,9 @@ INSTALLED_APPS = [
     'notifications',
     'schedule',
     'django_elasticsearch_dsl',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'djoser',
 ]
 
 MIDDLEWARE = [
@@ -59,6 +65,40 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+DJOSER = {
+    # 'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
+    # 'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
+    # 'ACTIVATION_URL': '#/activate/{uid}/{token}',
+    # 'SEND_ACTIVATION_EMAIL': True,
+    'SERIALIZERS': {
+        'user_create': 'users.serializers.UserRegistrationSerializer',
+        'user': 'djoser.serializers.UserSerializer'
+    }
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'UPDATE_LAST_LOGIN': True,
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+}
 
 ROOT_URLCONF = 'application.urls'
 
@@ -99,6 +139,16 @@ DATABASES = {
     }
 }
 
+# Cache
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'LOCATION': '127.0.0.1:11211',
+    }
+}
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -122,9 +172,10 @@ AUTH_USER_MODEL = "users.User"
 
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ORIGIN_WHITELIST = ['https://undefinedtrack.github.io', 'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000']
+CORS_ORIGIN_WHITELIST = ['https://undefinedtrack.github.io', 'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000', 'https://alexander-goryakin.droidroot1995.tk']
+# CORS_ORIGIN_ALLOW_ALL = True 
 CSRF_TRUSTED_ORIGINS = ['https://undefinedtrack.github.io/vetcards_frontend/', 'https://undefinedtrack.github.io/vetcards_frontend/#/', 
-'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000']
+'https://vetcards.herokuapp.com', 'http://localhost:8000', 'http://localhost:3000', 'https://undefinedtrack.github.io', 'http://localhost:3000/vetcards_frontend']
 
 CELERY_BROKER_URL = 'redis://localhost:6379'  
 CELERY_RESULT_BACKEND = 'redis://localhost:6379'  
@@ -135,8 +186,8 @@ CELERY_TIMEZONE = 'Europe/Moscow'
 CELERY_BEAT_SCHEDULE = {
     'notif_sender': {
         'task': 'notifications.tasks.notif_sender',
-        'schedule': 30.0, # crontab(minute=59, hour=23),
-        'args': ()
+        'schedule': crontab(minute=50, hour=14),
+        # 'args': ()
     },
 }
 
@@ -164,6 +215,12 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+FRONTEND_URL = 'https://udefinedtrack.github.io/vetcards_frontend/#/'
+'''LOGIN_URL = 'login'
+LOGOUT_URL = 'logout'
+LOGIN_REDIRECT_URL = FRONTEND_URL + 'profile'
+LOGOUT_REDIRECT_URL = FRONTEND_URL + 'login'''
 
 
 # Static files (CSS, JavaScript, Images)

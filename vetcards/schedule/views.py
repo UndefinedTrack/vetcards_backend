@@ -6,6 +6,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from .forms import SlotCreateForm, SlotAppointForm, SlotDisappointForm
 
 # Create your views here.
@@ -16,6 +18,19 @@ def create_slot(request):
     '''Создание слота'''
 
     Slot = apps.get_model('schedule.Slot')
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
     
     form = SlotCreateForm(request.POST)
     
@@ -38,7 +53,18 @@ def remove_slot(request):
     
     Slot = apps.get_model('schedule.Slot')
     
-    uid = int(request.POST['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
     sid = int(request.POST['sid'])
     
     slot = Slot.objects.filter(id=int(sid)).first()
@@ -59,6 +85,19 @@ def appoint_to_slot(request):
     Pet = apps.get_model('pets.Pet')
     Slot = apps.get_model('schedule.Slot')
     User = apps.get_model('users.User')
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
     
     form = SlotAppointForm(request.POST)
     
@@ -103,6 +142,19 @@ def disappoint_from_slot(request):
     Pet = apps.get_model('pets.Pet')
     Slot = apps.get_model('schedule.Slot')
     User = apps.get_model('users.User')
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
     
     form = SlotDisappointForm(request.POST)
     
@@ -144,6 +196,19 @@ def vet_day_slots_list(request):
 
     User = apps.get_model('users.User')
     Slot = apps.get_model('schedule.Slot')
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
     
     vid = int(request.GET['vid'])
     slot_dt = request.GET['dt']
@@ -171,6 +236,19 @@ def vet_int_slots_list(request):
 
     User = apps.get_model('users.User')
     Slot = apps.get_model('schedule.Slot')
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
 
     vid = int(request.GET['vid'])
     slot_st_dt = request.GET['st_dt']
@@ -200,10 +278,21 @@ def day_slots_list(request):
     User = apps.get_model('users.User')
     Slot = apps.get_model('schedule.Slot')
 
-    uid = int(request.GET['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
     slot_dt = request.GET['dt']
 
-    user = User.objects.filter(id=uid).first()
+    user = auth[0] # User.objects.filter(id=uid).first()
 
     if not user.vet:
         return JsonResponse({"error": "You aren't veterinar"})
@@ -226,11 +315,22 @@ def int_slots_list(request):
     User = apps.get_model('users.User')
     Slot = apps.get_model('schedule.Slot')
 
-    uid = int(request.GET['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
     slot_st_dt = request.GET['st_dt']
     slot_end_dt = request.GET['end_dt']
 
-    user = User.objects.filter(id=uid).first()
+    user = auth[0] # User.objects.filter(id=uid).first()
 
     if not user.vet:
         return JsonResponse({"error": "You aren't veterinar"})
@@ -254,10 +354,23 @@ def pet_slots_list(request):
     Pet = apps.get_model('pets.Pet')
     Slot = apps.get_model('schedule.Slot')
 
-    uid = int(request.GET['uid'])
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
     pid = int(request.GET['pid'])
 
-    user = User.objects.filter(id=uid).first()
+    user = auth[0]
+
+    # user = User.objects.filter(id=uid).first()
     pet = Pet.objects.filter(id=pid).first()
 
     if pet.user.id != uid and not user.vet:

@@ -1,6 +1,6 @@
 from django.urls import path, re_path
 from django.urls import include
-from .views import (create_user, update_user_info, get_user_info, csrf, vets_list, upload_user_avatar, protected_file)
+from .views import (create_user, update_user_info, get_user_info, csrf, vets_list, upload_user_avatar, protected_file, test)
 
 urlpatterns = [
     re_path(r'^avatars/.+$', protected_file, name="protected_file"),
@@ -10,4 +10,5 @@ urlpatterns = [
     path('csrf', csrf, name='csrf'),
     path('vets', vets_list, name='vets'),
     path('avatar', upload_user_avatar, name='upload_user_avatar'),
+    path('test', test, name='test')
 ]

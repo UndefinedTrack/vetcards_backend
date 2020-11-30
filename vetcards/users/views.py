@@ -7,7 +7,14 @@ from django.contrib.auth.hashers import make_password
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
-from .forms import UserForm, UpdateUserForm, UserAvatarForm
+from django.contrib.auth.decorators import login_required
+
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
+
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from .forms import SignUpForm, UpdateUserForm, UserAvatarForm
 
 # Create your views here.
 
@@ -22,9 +29,19 @@ def create_user(request):
     '''Создание пользователя'''
     
     User = apps.get_model('users.User')
-    form = UserForm(request.POST)
+    form = SignUpForm(request.POST)
     
     if form.is_valid():
+
+        user = User.objects.filter(username=form.cleaned_data['username']).first()
+
+        if user != None:
+            return JsonResponse({"error": "User with such username already exists"})
+
+        user = User.objects.filter(email=form.cleaned_data['email']).first()
+
+        if user != None:
+            return JsonResponse({"error": "User with such email already exists"})
         
         user = User.objects.create(username=form.cleaned_data['username'],
                                    password=make_password(form.cleaned_data['password']),
@@ -36,7 +53,7 @@ def create_user(request):
         
         usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
                'patronymic': user.patronymic, 'last_name': user.last_name,
-               'phone': user.phone, 'email': user.email}
+               'phone': '' if user.phone is None else user.phone, 'email': user.email}
         
         return JsonResponse({"user": usr})
         
@@ -51,10 +68,28 @@ def update_user_info(request):
     
     User = apps.get_model('users.User')
     form = UpdateUserForm(request.POST)
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
     
     if form.is_valid():
-        
-        user = User.objects.filter(id=form.cleaned_data['pk']).first()
+
+        user = auth[0] # User.objects.filter(id=uid)[0] # form.cleaned_data['pk'])[0]
+
+        if user.vet and uid != int(form.cleaned_data['pk']):
+            user = User.objects.filter(id=int(form.cleaned_data['pk']))[0]
+        elif not user.vet and uid != int(form.cleaned_data['pk']):
+            return JsonResponse({"errors": "Your id doesn't match the specified"})
         
         if user == None:
             return JsonResponse({"errors": "User not found"})
@@ -67,14 +102,20 @@ def update_user_info(request):
                 
         user.save()
 
+        avatar = user.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/users/avatars/') if user.avatar else ''
+
         usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
-               'patronymic': user.patronymic, 'last_name': user.last_name,
-               'phone': user.phone, 'email': user.email}
+               'patronymic': '' if user.patronymic is None else user.patronymic, 'last_name': user.last_name,
+               'phone': '' if user.phone is None else user.phone, 'email': user.email,
+               'avatar': avatar, 'region': '' if user.region is None else user.region, 
+               'city': '' if user.city is None else user.city, 'street': '' if user.street is None else user.street, 
+               'address': '' if user.address is None else user.address, 
+               'passport': '' if user.passport is None else user.passport,
+               'vet': user.vet, 'paid_service': user.paid_service, 'super_vet': user.super_vet}
         
         return JsonResponse({"user": usr})
             
     return JsonResponse({"errors": form.errors})
-    
     
 @require_GET
 def get_user_info(request):
@@ -82,18 +123,63 @@ def get_user_info(request):
     '''Получение информации о пользователе'''
     
     User = apps.get_model('users.User')
-    
-    user = User.objects.filter(id=int(request.GET['uid'])).values('id', 'username', 'first_name', 'patronymic', 
-                                                   'last_name', 'phone', 'email')
-    
-    return JsonResponse({"user": list(user)[0]})
 
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
+    
+    user = auth[0] # User.objects.filter(id=uid).first()
+
+    if user.vet and uid != int(request.GET['uid']):
+            user = User.objects.filter(id=int(request.GET['uid']))[0]
+    elif not user.vet and uid != int(request.GET['uid']):
+        return JsonResponse({"errors": "Your id doesn't match the specified"})
+
+    if user == None:
+        return JsonResponse({"errors": "User not found " + str(uid)})
+
+    avatar = user.avatar.url.replace('http://hb.bizmrg.com/undefined/',  '/users/avatars/') if user.avatar else ''
+
+    usr = {'id': user.id, 'username': user.username, 'first_name': user.first_name,
+           'patronymic': '' if user.patronymic is None else user.patronymic, 'last_name': user.last_name,
+           'phone': '' if user.phone is None else user.phone, 'email': user.email, 
+           'avatar': avatar, 'region': '' if user.region is None else user.region, 
+           'city': '' if user.city is None else user.city, 'street': '' if user.street is None else user.street, 
+           'address': '' if user.address is None else user.address, 
+           'passport': '' if user.passport is None else user.passport,
+           'vet': user.vet, 'paid_service': user.paid_service, 'super_vet': user.super_vet}
+    
+    return JsonResponse({"user": usr})
+
+@cache_page(60*5)
 @require_GET
 def vets_list(request):
 
     '''Выдает список ветеринаров'''
 
     User = apps.get_model('users.User')
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
     
     vets = User.objects.filter(vet=True).values('id', 'first_name', 'patronymic', 
                                                    'last_name')
@@ -107,13 +193,26 @@ def upload_user_avatar(request):
     User = apps.get_model('users.User')
     
     form = UserAvatarForm(request.POST, request.FILES)
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
+        return JsonResponse({"error": "You aren't authenticated"})
+        
+    uid = auth[0].id
     
     if form.is_valid():
         
-        user = User.objects.filter(id=form.cleaned_data['pk']).first()
+        user = auth[0] # User.objects.filter(id=uid).first() # form.cleaned_data['pk']).first()
         
         if user == None:
-            return JsonResponse({"error": "Pet not found"})
+            return JsonResponse({"error": "User not found"})
         
         user.avatar = form.cleaned_data['avatar']
         user.save()
@@ -126,20 +225,43 @@ def upload_user_avatar(request):
     
     return JsonResponse({'errors': form.errors}, status=400)
 
-
-@csrf_exempt
 @require_GET
 def protected_file(request):
-    if request.user.is_authenticated:
-        url = request.path.replace('/users/avatars', '/protected')
-        print(url)
-        response = HttpResponse(status=200)
-        response['X-Accel-Redirect'] = url
-        print(response.has_header('X-Accel-Redirect'))
-        
-        if 'Expires' in request.GET.keys():
-            response['X-Accel-Expires'] = request.GET['Expires']
-        response['Content-type'] = ''
-        return response
-    else:
+
+    auth = None
+    authenticator = JWTAuthentication()
+    
+    try:
+        auth = authenticator.authenticate(request)
+    except Exception:
+        print("Invalid token")
+
+    if auth == None:
         return HttpResponse('<h1>File not found</h1>', status=404)
+        
+    uid = auth[0].id
+
+    url = request.path.replace('/users/avatars', '/s3_files')
+    print(url)
+    response = HttpResponse(status=200)
+    response['X-Accel-Redirect'] = url
+    print(response.has_header('X-Accel-Redirect'))
+    
+    if 'Expires' in request.GET.keys():
+        response['X-Accel-Expires'] = request.GET['Expires']
+    response['Content-type'] = ''
+    response['Access-Control-Allow-Origin'] = 'https://undefinedtrack.github.io'
+    response['Access-Control-Allow-Credentials'] = 'true'
+    response['Access-Control-Allow-Methods'] = 'GET' # , POST, PUT, DELETE, OPTIONS'
+    response['Access-Control-Allow-Headers'] =  'Accept,Authorization,Cache-Control,Content-Type,DNT,If-Modified-Since,Keep-Alive,Origin,User-Agent,X-Requested-With'
+
+    return response
+
+        
+
+# @login_required
+@require_GET
+def test(request):
+    authenticator = JWTAuthentication()
+    user, token = authenticator.authenticate(request)
+    return JsonResponse({"user": user.id})
